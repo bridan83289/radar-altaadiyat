@@ -1,0 +1,4341 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>رادار التعديات - National Grid SA</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl}
+#root{height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#c5cfdf;border-radius:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.fade{animation:fadeUp .28s ease both}
+input,textarea,select{font-family:inherit;background:#fff;border:1.5px solid #d1d9e8;color:#1a2744;border-radius:8px;padding:7px 11px;outline:none;font-size:12px;direction:rtl;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{border-color:#1a2e5e}
+.card{background:#fff;border:1px solid #d1d9e8;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(26,46,94,.07)}
+.rrow{padding:10px 13px;border-radius:10px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;background:#fff;margin-bottom:7px;box-shadow:0 1px 3px rgba(26,46,94,.06)}
+.rrow:hover{border-color:rgba(26,46,94,.27)}.rrow.sel{border-color:#1a2e5e}
+a{text-decoration:none}
+.leaflet-popup-content-wrapper{border-radius:10px!important}
+.leaflet-popup-content{margin:12px 14px!important;font-family:'IBM Plex Sans Arabic',sans-serif!important}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+window.ANTHROPIC_KEY="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";
+window.storage={
+get:function(k){return new Promise(function(r){try{var v=localStorage.getItem(k);r(v?{key:k,value:v}:null);}catch(e){r(null);}});},
+set:function(k,v){return new Promise(function(r){try{localStorage.setItem(k,v);r({key:k,value:v});}catch(e){r(null);}});},
+delete:function(k){return new Promise(function(r){try{localStorage.removeItem(k);r({key:k,deleted:true});}catch(e){r(null);}});}
+};
+</script>
+<script>
+var C = {
+  navy: "#1a2e5e",
+  navy2: "#162654",
+  navy3: "#1e3570",
+  orange: "#e8742a",
+  white: "#ffffff",
+  bg: "#f0f2f7",
+  t1: "#1a2744",
+  t2: "#3d5278",
+  t3: "#6b7ea8",
+  t4: "#a0aec0",
+  red: "#e53e3e",
+  green: "#38a169",
+  amber: "#d97706",
+  yellow: "#ca8a04",
+  bdr: "#d1d9e8",
+  bdrL: "#e8edf5"
+};
+var LOGO = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCABkANwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD2aiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiqrKba68wf6qYgOP7rdAfx6flVqgBKWuX8Xaw9hNbxQsQ6I9wwHouAP5mi/N7o98+v6Zbve2N1Dvu7ZZACpAyJEzx04I78UQtKTitzSdOUIRm9mdRRXP2niu31oeXoSG7lEPmOzgrHEccKx7sTxge57Vc0/xBZX032Vy9pegfNa3A2SD6Z4Ye4zVOElujK6NSioLy9ttPtXurudIIYxlnc4ArjNa1mz1fX/AAtc6bd+dbm9kRmTIBIC5Hv1pwg5CcrHdUVh6l4kXTtdt9KNq0hntpLjzA4AGwE4xjvim2fihLvwe3iL7KyKIXl8kuM/KSMZx3xRyStew+ZG9RXG2HxANxcWQvdEurK2vnCQXLOGRmPToKoeLPELXHiGXw9catHo9hEitPOCTJNuAO1cdOv+elWqM+azJ51a56BS1zNg2iL4Qvl0G4SaFIJAzrIWYtsPLE85rkvDssjX3gndI53QXG7LE5+ZuvrQqV7+X+Vwc7HqdV7+9i06wnvJg7RwIXYIuWIHoO9SpLHIDsdX2nB2nOD6VxXhTVodJ8N63qN67tFb6jOTzknkAAZ96iMLq427HQaT4msdZuntraO5V0gScmWLaNrdOfX2qxo2s22u2Ru7VJkjEjR4lTa2R14rG0LxnJrOsrps2jz2LPAZ0aZx8ycYOMd81p+G9dXxDpr3q25gCzPFtLbvunGc1U4ON9BKV+prUUUVkWFFFFABRRRQAUUUUAFFFFADJolmiMb5wfQ4I96r6bcPcWEbyHMgyj/7ykqf1FW6x9XY6Pbz6pbj5VBaeIHhuMBh/tA4+o/CjSw0m2kjhvEV99v8R6mwOUht3hX6LjP65rsPBV6L3w3CjHL25MLZ9B0/QiuH0LRNQ1hb2aBAR5LqXY4DOecD3rX+H129rqt3pswZGkXdsYYIZeCPyP6VxU5PnTfU+hxlKDw7hF6wsegJGkahURVUdgMCud8UpHqd1p2hqitLPMJ3fHzQxRkFmB7EnCg+5rR1HXrOwla2AlursLuFtbRl3OemccLn1OKh0PTbmOa41XUgov7zAKKciCMfdjB745JPcmvRj7vvM+beuhT8caVqWsaTb22mwxSulykrrK+1cLk4PrzjisjUtK8UXo0i9j0rT4LvT7mSTyY5cRkELg/jz+Vd5TZJEijaSRgqKMsT0ApxquKsDhdnnNx/bNxrp1fWxpltHYWk0MggugxUujbQQTnJJrM07SvFWseDNOsbextG05HEy75irSgMThh6ZP8AKvQv7C0C9lu2NnbztdtHNcZy28j7hIrRae1s4whdI0QqgUfw54UYHSr+sJLRE+ybdmeZx+FPF8VrHax6fZLDFf8A22NBccI39wf7P61uTR+MbiUyz+GtAlkPV3bcT+Jrt6KTrt7pAoJdTze20PxlZ3OpzW2k6ZEupoEkiSbCJwRlR68mrmj+FNWsrvww80MYXTYpluCJAdpYsRj16iu2F7bG1+1ecohAJ3k4HBxQl3by2puY5VeEAkupyMDrUvEt9v6VivZWOP8ABV/ZWUmuw3V3Bbyf2pK2yWQIccc81z+l2uvavoOr2Om2Nlc6dd3sxMskxVt24HK+3ArvrzR/D1/NFc3enWc8lzgJI8IJfjI5x6VqW1tBZ26QW0KQxIMKkahQPwFX7eOritdCfZvZnnWnaL45sNUh1FrWxuZobX7Kvmz4ymcjOOp966jwRpF9ouhNa6giJO1xJJhH3DDH1roqKmdZzVmhqCQUUUViWFFFFABRRRQAUUUUAFFFFABWR4i06fV7SLT4mMcUsgM8n91Bzge5OK16KTV1YuE3CSkt0YcOpadoOiRJNthMWIhBGMu77tuFXqxJ/nWNe6fquqatFq+n6ZJpckQ+aaZ0MkoPHEYyMgE9TXZPFHIVLorFTkZGcGnVTUWrWCNScZcye/4lDS9Ht9LErxtLNPcENPPM+55SBgZPsOgHArQooobb1ZAVU1XP9lXeBk+S/wDKrdFTJXTQ4uzTONQzWVvcws0i4aKNHDlBt2sRkgZ74+tWIZGLvKZZPOlW0Y8n5hkBjj611OB6UYFcqw9uv9anS8Rfp/Wn+Ryi3F44mXz7jcSom5I8t/OwAPT5aX7ZPHPYxmacFZMFmkPzr5pXpjnjqTXVYowPSn7B/wAwe3X8pzo/5ANoxBMcF1mYbc4Ac5yPY4NRpPc3SKzTMAsdwwMIKLJtI2nH4102KMVXsPMn23kcxBLJJq1ks0spdGj2Ic7dhi5b67s81au9Uure7njQmTa6lQighUHLA9wcA1u4FGBQqLSaUgdZNpuIA5GR0NLRRXQc4UUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAf/2Q=="
+var KML = [[41.10496, 31.02041], [41.10513, 31.02215], [41.10533, 31.02388], [41.10552, 31.02555], [41.10571, 31.02735], [41.10592, 31.02913], [41.10611, 31.03093], [41.10631, 31.03272], [41.10650, 31.03453], [41.10670, 31.03632], [41.10691, 31.03810], [41.10710, 31.03991], [41.10731, 31.04170], [41.10749, 31.04342], [41.10768, 31.04511], [41.10390, 31.04545], [41.10007, 31.04570], [41.09629, 31.04604], [41.09252, 31.04640], [41.08869, 31.04666], [41.08492, 31.04702], [41.08117, 31.04730], [41.07738, 31.04761], [41.07460, 31.04786], [41.07151, 31.04696], [41.06814, 31.04581], [41.06467, 31.04479], [41.06149, 31.04374], [41.05816, 31.04276], [41.05452, 31.04165], [41.05131, 31.04059], [41.04795, 31.03961], [41.04455, 31.03861], [41.04120, 31.03755], [41.03763, 31.03654], [41.03538, 31.03570], [41.03169, 31.03464], [41.02806, 31.03434], [41.02415, 31.03419], [41.02081, 31.03405], [41.01708, 31.03380], [41.01404, 31.03359], [41.01094, 31.03343], [41.00718, 31.03320], [41.00332, 31.03294], [40.99960, 31.03279], [40.99681, 31.03257], [40.99375, 31.03242], [40.99055, 31.03224], [40.98756, 31.03213], [40.98401, 31.03189], [40.98023, 31.03165], [40.97698, 31.03137], [40.97387, 31.03129], [40.97045, 31.03103], [40.96762, 31.03093], [40.96502, 31.03081], [40.96209, 31.03062], [40.95900, 31.03047], [40.95632, 31.03029], [40.95249, 31.03000], [40.94905, 31.02986], [40.94557, 31.02961], [40.94238, 31.02947], [40.93953, 31.02931], [40.93662, 31.02911], [40.93462, 31.02722], [40.93230, 31.02500], [40.92985, 31.02267], [40.92761, 31.02049], [40.92545, 31.01849], [40.92317, 31.01630], [40.92072, 31.01413], [40.91850, 31.01201], [40.91597, 31.00938], [40.91411, 31.00771], [40.91536, 31.00532], [40.91649, 31.00310], [40.91796, 31.00018], [40.91948, 30.99727], [40.92098, 30.99433], [40.92225, 30.99188], [40.92453, 30.99058], [40.92536, 30.99006], [40.92715, 30.98905], [40.92893, 30.98803], [40.93073, 30.98699], [40.93250, 30.98596], [40.93429, 30.98492], [40.93590, 30.98400], [40.93761, 30.98301], [40.93947, 30.98222], [40.94137, 30.98139], [40.94326, 30.98059], [40.94513, 30.97978], [40.94699, 30.97898], [40.94713, 30.97648], [40.94718, 30.97389], [40.94723, 30.97126], [40.94734, 30.96864], [40.94734, 30.96604], [40.94746, 30.96331], [40.94758, 30.96080], [40.94767, 30.95778], [40.94776, 30.95524], [40.94944, 30.95394], [40.95121, 30.95256], [40.95328, 30.95097], [40.95532, 30.94936], [40.95806, 30.94726], [40.96094, 30.94499], [40.96309, 30.94333], [40.96499, 30.94181], [40.96765, 30.93979], [40.97045, 30.93758], [40.97305, 30.93558], [40.97585, 30.93337], [40.97798, 30.93171], [40.98057, 30.92974], [40.98299, 30.92781], [40.98538, 30.92595], [40.98785, 30.92409], [40.99104, 30.92350], [40.99435, 30.92292], [40.99765, 30.92234], [41.00086, 30.92183], [41.00464, 30.92108], [41.00820, 30.92050], [41.01170, 30.91995], [41.01515, 30.91931], [41.01889, 30.91867], [41.02242, 30.91803], [41.02601, 30.91746], [41.02909, 30.91883], [41.03215, 30.92026], [41.03489, 30.92159], [41.03795, 30.92299], [41.04102, 30.92445], [41.04403, 30.92580], [41.04722, 30.92735], [41.04954, 30.92782], [41.05208, 30.92600], [41.05298, 30.92679], [41.05497, 30.92888]];
+var ZONES = [{
+  id: "Z01",
+  km: 0.8,
+  lat: 31.02713,
+  lng: 41.10569,
+  brg: 5.2
+}, {
+  id: "Z02",
+  km: 2.2,
+  lat: 31.04056,
+  lng: 41.10718,
+  brg: 5.7
+}, {
+  id: "Z03",
+  km: 3.8,
+  lat: 31.04595,
+  lng: 41.09732,
+  brg: 276.0
+}, {
+  id: "Z04",
+  km: 5.2,
+  lat: 31.04726,
+  lng: 41.08165,
+  brg: 275.0
+}, {
+  id: "Z05",
+  km: 6.8,
+  lat: 31.04532,
+  lng: 41.06647,
+  brg: 251.1
+}, {
+  id: "Z06",
+  km: 8.2,
+  lat: 31.04071,
+  lng: 41.05167,
+  brg: 248.9
+}, {
+  id: "Z07",
+  km: 9.8,
+  lat: 31.03624,
+  lng: 41.03682,
+  brg: 246.5
+}, {
+  id: "Z08",
+  km: 11.2,
+  lat: 31.03408,
+  lng: 41.02144,
+  brg: 267.2
+}, {
+  id: "Z09",
+  km: 12.8,
+  lat: 31.03310,
+  lng: 41.00574,
+  brg: 265.5
+}, {
+  id: "Z10",
+  km: 14.2,
+  lat: 31.03222,
+  lng: 40.99003,
+  brg: 267.5
+}, {
+  id: "Z11",
+  km: 15.8,
+  lat: 31.03130,
+  lng: 40.97433,
+  brg: 268.3
+}, {
+  id: "Z12",
+  km: 17.2,
+  lat: 31.03044,
+  lng: 40.95862,
+  brg: 265.5
+}, {
+  id: "Z13",
+  km: 18.8,
+  lat: 31.02949,
+  lng: 40.94292,
+  brg: 267.1
+}, {
+  id: "Z14",
+  km: 20.2,
+  lat: 31.02311,
+  lng: 40.93031,
+  brg: 222.0
+}, {
+  id: "Z15",
+  km: 21.8,
+  lat: 31.01315,
+  lng: 40.91969,
+  brg: 221.9
+}, {
+  id: "Z16",
+  km: 23.2,
+  lat: 31.00200,
+  lng: 40.91704,
+  brg: 156.7
+}, {
+  id: "Z17",
+  km: 24.8,
+  lat: 30.99053,
+  lng: 40.92461,
+  brg: 126.2
+}, {
+  id: "Z18",
+  km: 26.2,
+  lat: 30.98299,
+  lng: 40.93766,
+  brg: 116.4
+}, {
+  id: "Z19",
+  km: 27.8,
+  lat: 30.97444,
+  lng: 40.94717,
+  brg: 179.1
+}, {
+  id: "Z20",
+  km: 29.2,
+  lat: 30.96096,
+  lng: 40.94757,
+  brg: 177.7
+}, {
+  id: "Z21",
+  km: 30.8,
+  lat: 30.95003,
+  lng: 40.95447,
+  brg: 132.6
+}, {
+  id: "Z22",
+  km: 32.2,
+  lat: 30.94096,
+  lng: 40.96611,
+  brg: 131.5
+}, {
+  id: "Z23",
+  km: 33.8,
+  lat: 30.93189,
+  lng: 40.97775,
+  brg: 132.3
+}, {
+  id: "Z24",
+  km: 35.2,
+  lat: 30.92370,
+  lng: 40.98994,
+  brg: 102.2
+}, {
+  id: "Z25",
+  km: 36.8,
+  lat: 30.92097,
+  lng: 41.00534,
+  brg: 100.8
+}, {
+  id: "Z26",
+  km: 38.2,
+  lat: 30.91833,
+  lng: 41.02076,
+  brg: 101.9
+}, {
+  id: "Z27",
+  km: 39.8,
+  lat: 30.92170,
+  lng: 41.03513,
+  brg: 61.9
+}, {
+  id: "Z28",
+  km: 41.2,
+  lat: 30.92774,
+  lng: 41.04913,
+  brg: 76.7
+}];
+var LINE = {
+  name: "عرعر أ - عرعر ب",
+  km: 42.03,
+  towers: 144,
+  row: 25
+};
+var DEFAULT_USERS = [
+  {id:"U1",name:"عبدالمجيد العنزي",role:"admin",title:"مدير النظام",pass:"9090"}
+];
+function getUsers(){try{var s=localStorage.getItem("rr_users");if(s)return JSON.parse(s);}catch(e){}return DEFAULT_USERS;}
+function saveUsers(u){try{localStorage.setItem("rr_users",JSON.stringify(u));}catch(e){}}
+var USERS=getUsers();
+var RL = {
+  admin: "مدير",
+  manager: "مشرف",
+  field: "فني"
+};
+var RC = {
+  admin: C.orange,
+  manager: C.navy3,
+  field: C.green
+};
+// Severity colors
+var SVC = {};
+SVC["حرج"] = C.red;
+SVC["متوسط"] = C.amber;
+SVC["منخفض"] = C.yellow;
+// Status colors: نشط=أحمر, تحت الإجراء=أصفر, مغلق=أخضر
+var STC = {};
+STC["جديد"] = C.red;
+STC["قيد المتابعة"] = C.yellow;
+STC["ميداني"] = C.amber;
+STC["مغلق"] = C.green;
+var STATUS_LIST = ["جديد", "قيد المتابعة", "ميداني", "مغلق"];
+var MUGHLA = "مغلق";
+var JADID = "جديد";
+var TIC = {};
+TIC["إنشائي"] = "🏗";
+TIC["زراعي"] = "🌴";
+TIC["متحرك"] = "🚛";
+TIC["حفريات"] = "⛏";
+// Helpers
+function gRes(lat, z) {
+  return 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z || 17);
+}
+function navUrl(la, ln) {
+  return "https://www.google.com/maps/dir/?api=1&destination=" + la + "," + ln + "&travelmode=driving";
+}
+function mapUrl(la, ln) {
+  return "https://www.google.com/maps/@" + la + "," + ln + ",17z/data=!3m1!1e3";
+}
+function cop(lat, lng, d1, d2) {
+  var d = 0.006;
+  return "https://sh.dataspace.copernicus.eu/ogc/wms/d8a04b94-2a74-4f7e-988e-7e3f4f96a11d?SERVICE=WMS&REQUEST=GetMap&LAYERS=TRUE-COLOR&WIDTH=512&HEIGHT=512&CRS=EPSG:4326&BBOX=" + (lng - d) + "," + (lat - d) + "," + (lng + d) + "," + (lat + d) + "&TIME=" + d1 + "/" + d2 + "&FORMAT=image/jpeg&MAXCC=30";
+}
+function today() {
+  return new Date().toISOString().split("T")[0];
+}
+function nowTime() {
+  return new Date().toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+function todayAr() {
+  return new Date().toLocaleDateString("ar-SA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+function mkId() {
+  return "RD-" + Date.now().toString().slice(-4) + Math.floor(Math.random() * 9 + 1);
+}
+function doff(n) {
+  var d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0];
+}
+function towerNum(km) {
+  return Math.max(1, Math.round(km / (LINE.km / LINE.towers)));
+}
+// ── Badge ──
+function Bdg(p) {
+  var col = p.color || C.t3;
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "2px 9px",
+      borderRadius: 20,
+      fontSize: p.size || 10,
+      fontWeight: 600,
+      background: col + "18",
+      color: col,
+      border: "1px solid " + col + "33"
+    }
+  }, p.label);
+}
+// ── Status Icon: red=active, yellow=in-progress, green=closed ──
+function SIco(p) {
+  var st = p.status;
+  var sz = p.size || 16;
+  var closed = st === MUGHLA;
+  var yellow = st === "قيد المتابعة" || st === "ميداني";
+  var col = closed ? C.green : yellow ? C.yellow : C.red;
+  return /*#__PURE__*/React.createElement("div", {
+    title: st,
+    style: {
+      width: sz,
+      height: sz,
+      borderRadius: "50%",
+      background: col + "18",
+      border: "2px solid " + col,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }
+  }, closed ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: sz * 0.6,
+      color: C.green,
+      lineHeight: 1
+    }
+  }, "\u2713") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: sz * 0.38,
+      height: sz * 0.38,
+      borderRadius: "50%",
+      background: col,
+      animation: yellow ? "none" : "pulse 2s infinite"
+    }
+  }));
+}
+// ── ROW Overlay Canvas ──
+function RowOvl(p) {
+  var zone = p.zone,
+    alerts = p.alerts || [],
+    W = 256,
+    H = 190;
+  var ref = React.useRef(null);
+  React.useEffect(function () {
+    var c = ref.current;
+    if (!c) return;
+    var ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+    var cx = W / 2,
+      cy = H / 2,
+      ang = (zone.brg || 90) * Math.PI / 180;
+    var hp = Math.round(LINE.row / gRes(zone.lat, 17));
+    var px = -Math.sin(ang),
+      py = Math.cos(ang),
+      dx = Math.cos(ang),
+      dy = Math.sin(ang),
+      L = 400;
+    ctx.beginPath();
+    ctx.moveTo(cx + px * hp - dx * L, cy + py * hp - dy * L);
+    ctx.lineTo(cx + px * hp + dx * L, cy + py * hp + dy * L);
+    ctx.lineTo(cx - px * hp + dx * L, cy - py * hp + dy * L);
+    ctx.lineTo(cx - px * hp - dx * L, cy - py * hp - dy * L);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(26,46,94,0.08)";
+    ctx.fill();
+    ctx.setLineDash([6, 3]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(232,116,42,0.9)";
+    [hp, -hp].forEach(function (o) {
+      ctx.beginPath();
+      ctx.moveTo(cx + px * o - dx * L, cy + py * o - dy * L);
+      ctx.lineTo(cx + px * o + dx * L, cy + py * o + dy * L);
+      ctx.stroke();
+    });
+    ctx.setLineDash([9, 4]);
+    ctx.strokeStyle = "rgba(232,116,42,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - dx * L, cy - dy * L);
+    ctx.lineTo(cx + dx * L, cy + dy * L);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    for (var ai = 0; ai < alerts.length; ai++) {
+      var a = alerts[ai];
+      var positions = [{
+        x: cx - 18 + px * hp * 0.4,
+        y: cy - 22
+      }, {
+        x: cx + 7,
+        y: cy - 17
+      }, {
+        x: cx - 22,
+        y: cy + 7
+      }];
+      var pos = positions[ai % 3];
+      var col2 = SVC[a.severity] || C.red;
+      ctx.strokeStyle = col2;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 2]);
+      ctx.strokeRect(pos.x, pos.y, 36, 36);
+      ctx.fillStyle = col2 + "20";
+      ctx.fillRect(pos.x, pos.y, 36, 36);
+      ctx.setLineDash([]);
+    }
+    ctx.font = "bold 8px monospace";
+    ctx.fillStyle = "rgba(232,116,42,0.8)";
+    ctx.fillText("ROW +" + LINE.row + "m", cx + px * hp + 3, cy + py * hp - 2);
+    ctx.fillText("ROW -" + LINE.row + "m", cx - px * hp - 52, cy - py * hp - 2);
+  }, [zone, alerts]);
+  return /*#__PURE__*/React.createElement("canvas", {
+    ref: ref,
+    width: W,
+    height: H,
+    style: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none"
+    }
+  });
+}
+// ── Satellite Image ──
+function SatImg(p) {
+  var s1 = React.useState(false);
+  var ok = s1[0];
+  var setOk = s1[1];
+  var s2 = React.useState(false);
+  var err = s2[0];
+  var setErr = s2[1];
+  React.useEffect(function () {
+    setOk(false);
+    setErr(false);
+  }, [p.url]);
+  var H = p.h || 190;
+  var bc = p.badge ? SVC[p.badge] || C.bdr : C.bdr;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      borderRadius: 9,
+      overflow: "hidden",
+      background: "#e8edf5",
+      border: "2px solid " + bc,
+      flex: 1,
+      minHeight: H
+    }
+  }, !ok && !err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: H,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 18,
+      height: 18,
+      border: "2px solid " + C.bdr,
+      borderTopColor: C.orange,
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.t3
+    }
+  }, p.src || "Sentinel-2")), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: H,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 26
+    }
+  }, "\uD83D\uDEF0"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.t3
+    }
+  }, p.label || "")), /*#__PURE__*/React.createElement("img", {
+    src: p.url,
+    alt: p.label || "",
+    onLoad: function () {
+      setOk(true);
+    },
+    onError: function () {
+      setErr(true);
+    },
+    style: {
+      width: "100%",
+      display: ok ? "block" : "none",
+      maxHeight: H,
+      objectFit: "cover"
+    }
+  }), (ok || err) && p.zone && /*#__PURE__*/React.createElement(RowOvl, {
+    zone: p.zone,
+    alerts: p.alerts || []
+  }), (ok || err) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: "linear-gradient(transparent,rgba(26,46,94,0.85))",
+      padding: "12px 8px 4px",
+      fontSize: 10,
+      color: "rgba(255,255,255,0.85)"
+    }
+  }, "\uD83D\uDEF0 ", p.src || "S2", " \xB7 ", p.label || ""), p.badge && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: 7,
+      right: 7,
+      background: bc,
+      color: "#fff",
+      borderRadius: 20,
+      padding: "2px 8px",
+      fontSize: 10,
+      fontWeight: 700
+    }
+  }, p.badge));
+}
+// ── Field Photos ──
+function FieldPh(p) {
+  var s1 = React.useState([]);
+  var imgs = s1[0];
+  var setImgs = s1[1];
+  var s2 = React.useState(null);
+  var prev = s2[0];
+  var setPrev = s2[1];
+  function handleFiles(e) {
+    Array.from(e.target.files).forEach(function (f) {
+      var r = new FileReader();
+      r.onload = function (ev) {
+        setImgs(function (old) {
+          return old.concat([{
+            src: ev.target.result,
+            name: f.name,
+            date: todayAr(),
+            time: nowTime()
+          }]);
+        });
+      };
+      r.readAsDataURL(f);
+    });
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.t2,
+      marginBottom: 6
+    }
+  }, "\uD83D\uDCF7 \u0635\u0648\u0631 \u0627\u0644\u0641\u0631\u064A\u0642 \u0627\u0644\u0645\u064A\u062F\u0627\u0646\u064A (", imgs.length, ")"), imgs.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3,1fr)",
+      gap: 7,
+      marginBottom: 8
+    }
+  }, imgs.map(function (img, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        borderRadius: 7,
+        overflow: "hidden",
+        border: "1px solid " + C.bdr,
+        cursor: "pointer",
+        position: "relative"
+      },
+      onClick: function () {
+        setPrev(img.src);
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: img.src,
+      alt: img.name,
+      style: {
+        width: "100%",
+        height: 80,
+        objectFit: "cover"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "rgba(26,46,94,0.75)",
+        padding: "2px 5px",
+        fontSize: 9,
+        color: "rgba(255,255,255,0.85)"
+      }
+    }, img.date, " ", img.time));
+  })), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 7,
+      padding: "8px 11px",
+      background: C.bg,
+      borderRadius: 8,
+      border: "1.5px dashed " + C.bdr,
+      cursor: "pointer",
+      fontSize: 11,
+      color: C.t2,
+      fontWeight: 600
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    multiple: true,
+    onChange: handleFiles,
+    style: {
+      display: "none"
+    }
+  }), "\uD83D\uDCF7 \u0631\u0641\u0639 \u0635\u0648\u0631 \u0645\u064A\u062F\u0627\u0646\u064A\u0629"), prev && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.88)",
+      zIndex: 2000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20
+    },
+    onClick: function () {
+      setPrev(null);
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: prev,
+    style: {
+      maxWidth: "90%",
+      maxHeight: "90%",
+      borderRadius: 10
+    },
+    onClick: function (e) {
+      e.stopPropagation();
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPrev(null);
+    },
+    style: {
+      position: "absolute",
+      top: 20,
+      right: 20,
+      background: "rgba(255,255,255,0.15)",
+      border: "none",
+      color: "#fff",
+      cursor: "pointer",
+      width: 36,
+      height: 36,
+      borderRadius: "50%",
+      fontSize: 18
+    }
+  }, "\u2715")));
+}
+// ── Leaflet Map ──
+function MapView(p) {
+  var ref = React.useRef(null);
+  var mp = React.useRef(null);
+  var mks = React.useRef([]);
+  React.useEffect(function () {
+    if (mp.current) return;
+    function init() {
+      var m = window.L.map(ref.current, {
+        zoomControl: true
+      }).setView([30.98, 41.01], 10);
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+        maxZoom: 19
+      }).addTo(m);
+      var lls = KML.map(function (c) {
+        return [c[1], c[0]];
+      });
+      window.L.polyline(lls, {
+        color: C.orange,
+        weight: 3,
+        opacity: 0.9
+      }).addTo(m);
+      var rd = 0.000225;
+      window.L.polyline(lls.map(function (pt) {
+        return [pt[0] + rd, pt[1]];
+      }), {
+        color: C.navy,
+        weight: 1,
+        opacity: 0.45,
+        dashArray: "5,4"
+      }).addTo(m);
+      window.L.polyline(lls.map(function (pt) {
+        return [pt[0] - rd, pt[1]];
+      }), {
+        color: C.navy,
+        weight: 1,
+        opacity: 0.45,
+        dashArray: "5,4"
+      }).addTo(m);
+      [[0, "أ"], [lls.length - 1, "ب"]].forEach(function (ep) {
+        window.L.marker(lls[ep[0]], {
+          icon: window.L.divIcon({
+            className: "",
+            html: '<div style="background:' + C.orange + ';color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid #fff">' + ep[1] + '</div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          })
+        }).addTo(m);
+      });
+      mp.current = m;
+      window._rmZone = p.onZone;
+      drawAll(m);
+    }
+    if (window.L) init();else {
+      var t = setInterval(function () {
+        if (window.L) {
+          clearInterval(t);
+          init();
+        }
+      }, 100);
+    }
+  }, []);
+  function drawAll(m) {
+    if (!m || !window.L) return;
+    mks.current.forEach(function (mk) {
+      try {
+        m.removeLayer(mk);
+      } catch (e) {}
+    });
+    mks.current = [];
+    ZONES.forEach(function (z) {
+      var hasA = p.reports && p.reports.some(function (r) {
+        return r.zoneId === z.id && r.status !== MUGHLA;
+      });
+      var col = hasA ? C.red : p.bl && p.bl[z.id] ? C.green : "#94a3b8";
+      var sz = hasA ? 13 : 9;
+      var mk = window.L.marker([z.lat, z.lng], {
+        icon: window.L.divIcon({
+          className: "",
+          html: '<div style="background:' + col + ';border-radius:50%;width:' + sz + 'px;height:' + sz + 'px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>',
+          iconSize: [sz, sz],
+          iconAnchor: [sz / 2, sz / 2]
+        })
+      }).addTo(m).bindPopup('<div style="direction:rtl;font-family:sans-serif;min-width:180px"><b style="color:#1a2e5e">KM ' + z.km + '</b>' + (hasA ? '<br><span style="color:#e53e3e;font-size:11px">🔴 تعدٍّ نشط</span>' : '') + '<br><button onclick="window._rmZone&&window._rmZone(\'' + z.id + '\')" style="margin-top:6px;background:#1a2e5e;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;width:100%">🔍 تحليل</button></div>');
+      mks.current.push(mk);
+    });
+    (p.reports || []).filter(function (r) {
+      return r.status !== MUGHLA;
+    }).forEach(function (r) {
+      var col = SVC[r.severity] || C.red;
+      var mk = window.L.marker([r.lat, r.lng], {
+        icon: window.L.divIcon({
+          className: "",
+          html: '<div style="background:' + col + ';color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff">⚠</div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        })
+      }).addTo(m).bindPopup('<div style="direction:rtl;font-family:sans-serif;min-width:190px"><b style="color:#1a2e5e">' + r.id + '</b><br><span style="font-size:12px">' + r.type + ' — ' + r.severity + '</span><br><div style="font-family:monospace;font-size:10px;color:#6b7ea8;margin:3px 0">' + r.lat.toFixed(5) + 'N, ' + r.lng.toFixed(5) + 'E</div><a href="' + navUrl(r.lat, r.lng) + '" target="_blank" style="display:block;margin-top:6px;background:#1a2e5e;color:#fff;text-align:center;padding:5px;border-radius:6px;font-size:11px">🧭 ملاحة</a></div>');
+      mks.current.push(mk);
+    });
+  }
+  React.useEffect(function () {
+    if (mp.current && window.L) drawAll(mp.current);
+  }, [p.reports, p.bl]);
+  React.useEffect(function () {
+    if (p.flyTo && mp.current) mp.current.flyTo([p.flyTo.lat, p.flyTo.lng], 15, {
+      duration: 1.2
+    });
+  }, [p.flyTo]);
+  React.useEffect(function () {
+    window._rmZone = p.onZone;
+  }, [p.onZone]);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: ref,
+    style: {
+      width: "100%",
+      height: p.h || 380,
+      borderRadius: 10,
+      border: "1px solid " + C.bdr
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: 10,
+      right: 10,
+      background: "rgba(255,255,255,0.95)",
+      borderRadius: 9,
+      padding: "8px 11px",
+      border: "1px solid " + C.bdr,
+      fontSize: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 3
+    }
+  }, LINE.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.t3
+    }
+  }, LINE.km, " \u0643\u0645 \xB7 ", ZONES.length, " \u0645\u0646\u0637\u0642\u0629"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4,
+      paddingTop: 3,
+      borderTop: "1px solid " + C.bdrL,
+      display: "flex",
+      gap: 8,
+      fontSize: 9,
+      color: C.t3
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDD34 \u0646\u0634\u0637"), /*#__PURE__*/React.createElement("span", null, "\uD83D\uDFE2 \u0645\u063A\u0644\u0642"), /*#__PURE__*/React.createElement("span", null, "\u26AB \u0644\u0645 \u064A\u064F\u0645\u0633\u062D"))));
+}
+// ── AI Analysis ──
+async function runAI(zone, cUrl, pUrl, refD, curD) {
+  var prompt = "نظام رادار التعديات. " + LINE.name + " KM " + zone.km + " | +-" + LINE.row + "m\nقارن داخل الحرم فقط.\nأنواع: إنشائي/زراعي/متحرك/حفريات/أخرى\nخطورة: حرج(0-20m)/متوسط(20-35m)/منخفض(35-50m)\nJSON فقط:\n{\"detected\":true,\"encroachments\":[{\"type\":\"إنشائي\",\"severity\":\"حرج\",\"distance_m\":12,\"description\":\"وصف\",\"confidence\":\"عالية\"}],\"filtered_out\":\"\",\"assessment\":\"\"}\nلا تعديات:{\"detected\":false,\"encroachments\":[],\"filtered_out\":\"\",\"assessment\":\"الحرم آمن\"}";
+  var res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": window.ANTHROPIC_KEY || "",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-iab": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 900,
+      messages: [{
+        role: "user",
+        content: [{
+          type: "image",
+          source: {
+            type: "url",
+            url: pUrl
+          }
+        }, {
+          type: "text",
+          text: "صورة المرجع."
+        }, {
+          type: "image",
+          source: {
+            type: "url",
+            url: cUrl
+          }
+        }, {
+          type: "text",
+          text: prompt
+        }]
+      }]
+    })
+  });
+  if (!res.ok) throw new Error("Claude " + res.status);
+  var d = await res.json();
+  var raw = d.content.map(function (c) {
+    return c.text || "";
+  }).join("").replace(/```json|```/g, "").trim();
+  return JSON.parse(raw);
+}
+// ── Scan Modal ──
+function ScanModal(p) {
+  var s1 = React.useState(p.initZone || ZONES[0]);
+  var zn = s1[0];
+  var setZn = s1[1];
+  var s2 = React.useState(doff(-35));
+  var refD = s2[0];
+  var setRefD = s2[1];
+  var s3 = React.useState(today());
+  var curD = s3[0];
+  var setCurD = s3[1];
+  var s4 = React.useState("idle");
+  var phase = s4[0];
+  var setPhase = s4[1];
+  var s5 = React.useState([]);
+  var logs = s5[0];
+  var setLogs = s5[1];
+  var s6 = React.useState(0);
+  var prog = s6[0];
+  var setProg = s6[1];
+  var s7 = React.useState(null);
+  var rImg = s7[0];
+  var setRImg = s7[1];
+  var s8 = React.useState(null);
+  var cImg = s8[0];
+  var setCImg = s8[1];
+  var s9 = React.useState(null);
+  var result = s9[0];
+  var setResult = s9[1];
+  var s10 = React.useState(null);
+  var scanErr = s10[0];
+  var setScanErr = s10[1];
+  var base = p.bl[zn.id];
+  var running = phase === "loading" || phase === "analyzing";
+  function addLog(msg, col) {
+    setLogs(function (old) {
+      return old.concat([{
+        t: new Date().toLocaleTimeString("ar"),
+        msg: msg,
+        col: col || C.t3
+      }]);
+    });
+  }
+  async function run() {
+    setLogs([]);
+    setResult(null);
+    setScanErr(null);
+    setProg(0);
+    setRImg(null);
+    setCImg(null);
+    setPhase("loading");
+    addLog("Sentinel-2 KM " + zn.km, C.navy);
+    var pi = setInterval(function () {
+      setProg(function (v) {
+        return Math.min(v + 2, 45);
+      });
+    }, 100);
+    var d1s = new Date(new Date(refD).getTime() - 10 * 86400000).toISOString().split("T")[0];
+    var d1e = new Date(new Date(refD).getTime() + 5 * 86400000).toISOString().split("T")[0];
+    var d2s = new Date(new Date(curD).getTime() - 5 * 86400000).toISOString().split("T")[0];
+    var d2e = new Date(new Date(curD).getTime() + 2 * 86400000).toISOString().split("T")[0];
+    var rUrl = cop(zn.lat, zn.lng, d1s, d1e);
+    var cUrl = cop(zn.lat, zn.lng, d2s, d2e);
+    setRImg({
+      url: rUrl,
+      date: refD,
+      src: "Copernicus"
+    });
+    await new Promise(function (r) {
+      setTimeout(r, 600);
+    });
+    setProg(52);
+    setCImg({
+      url: cUrl,
+      date: curD,
+      src: "Copernicus"
+    });
+    await new Promise(function (r) {
+      setTimeout(r, 500);
+    });
+    clearInterval(pi);
+    setProg(65);
+    setPhase("analyzing");
+    addLog("Claude AI...", C.navy3);
+    var pi2 = setInterval(function () {
+      setProg(function (v) {
+        return Math.min(v + 1.1, 92);
+      });
+    }, 120);
+    try {
+      var res = await runAI(zn, cUrl, rUrl, refD, curD);
+      clearInterval(pi2);
+      setProg(100);
+      setResult(res);
+      setPhase("done");
+      if (res.detected && res.encroachments.length) {
+        addLog(res.encroachments.length + " تعديات", C.red);
+      } else {
+        addLog("الحرم آمن", C.green);
+      }
+      var nb = Object.assign({}, base || {});
+      nb.url = cUrl;
+      nb.date = today();
+      nb.scanCount = (nb.scanCount || 0) + 1;
+      var newBL = Object.assign({}, p.bl);
+      newBL[zn.id] = nb;
+      await p.saveBL(newBL);
+      p.onResult({
+        zone: zn,
+        result: res,
+        rUrl: rUrl,
+        cUrl: cUrl,
+        refDate: refD,
+        curDate: curD
+      });
+    } catch (e) {
+      clearInterval(pi2);
+      addLog("خطأ - بيانات تجريبية", C.amber);
+      setScanErr("تجريبي");
+      var mock = {
+        detected: true,
+        encroachments: [{
+          type: "إنشائي",
+          severity: "حرج",
+          distance_m: 14,
+          description: "هيكل معدني جديد داخل الحرم",
+          confidence: "عالية"
+        }, {
+          type: "زراعي",
+          severity: "متوسط",
+          distance_m: 29,
+          description: "نمو نباتي داخل الحرم",
+          confidence: "عالية"
+        }],
+        filtered_out: "غيوم",
+        assessment: "تعديان مكتشفان"
+      };
+      setResult(mock);
+      setProg(100);
+      setPhase("done");
+      var nb2 = {
+        url: cUrl,
+        date: today(),
+        scanCount: 1
+      };
+      var newBL2 = Object.assign({}, p.bl);
+      newBL2[zn.id] = nb2;
+      await p.saveBL(newBL2);
+      p.onResult({
+        zone: zn,
+        result: mock,
+        rUrl: rUrl,
+        cUrl: cUrl,
+        refDate: refD,
+        curDate: curD
+      });
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(26,46,94,0.65)",
+      zIndex: 1000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.white,
+      borderRadius: 14,
+      width: "100%",
+      maxWidth: 880,
+      maxHeight: "92vh",
+      overflowY: "auto",
+      direction: "rtl",
+      boxShadow: "0 24px 80px rgba(26,46,94,0.4)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.navy,
+      padding: "14px 20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderRadius: "14px 14px 0 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\u062A\u062D\u0644\u064A\u0644 Sentinel-2"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.5)",
+      marginTop: 2
+    }
+  }, LINE.name)), /*#__PURE__*/React.createElement("button", {
+    onClick: p.onClose,
+    style: {
+      background: "rgba(255,255,255,0.15)",
+      border: "none",
+      color: C.white,
+      cursor: "pointer",
+      width: 32,
+      height: 32,
+      borderRadius: "50%",
+      fontSize: 16
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 20,
+      display: "grid",
+      gridTemplateColumns: "270px 1fr",
+      gap: 15
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 11
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 10,
+      padding: "13px 14px",
+      border: "1px solid " + C.bdrL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.navy,
+      letterSpacing: ".1em",
+      marginBottom: 10
+    }
+  }, "\u0625\u0639\u062F\u0627\u062F \u0627\u0644\u0645\u0633\u062D"), /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 11,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "\u0627\u0644\u0645\u0646\u0637\u0642\u0629"), /*#__PURE__*/React.createElement("select", {
+    value: zn.id,
+    onChange: function (e) {
+      setZn(ZONES.find(function (z) {
+        return z.id === e.target.value;
+      }) || ZONES[0]);
+    },
+    style: {
+      width: "100%",
+      marginBottom: 9
+    }
+  }, ZONES.map(function (z) {
+    return /*#__PURE__*/React.createElement("option", {
+      key: z.id,
+      value: z.id
+    }, (p.bl[z.id] ? "● " : "○ ") + "KM " + z.km);
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 7,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0631\u062C\u0639"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: refD,
+    onChange: function (e) {
+      setRefD(e.target.value);
+    },
+    style: {
+      width: "100%"
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0631\u0635\u062F"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: curD,
+    onChange: function (e) {
+      setCurD(e.target.value);
+    },
+    style: {
+      width: "100%"
+    }
+  }))), (running || phase === "done") && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 8,
+      padding: "9px 10px",
+      border: "1px solid " + C.bdrL,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 10,
+      color: C.t2,
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", null, phase === "loading" ? "تحميل..." : phase === "analyzing" ? "AI..." : "اكتمل"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "monospace",
+      fontWeight: 700,
+      color: C.navy
+    }
+  }, Math.round(prog), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 4,
+      background: C.bdr,
+      borderRadius: 2,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: prog + "%",
+      background: "linear-gradient(90deg," + C.navy + "," + C.orange + ")",
+      borderRadius: 2,
+      transition: "width .2s"
+    }
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: run,
+    disabled: running,
+    style: {
+      width: "100%",
+      padding: "10px",
+      borderRadius: 10,
+      border: "none",
+      cursor: running ? "not-allowed" : "pointer",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: 700,
+      background: running ? C.t4 : "linear-gradient(135deg," + C.navy + "," + C.navy3 + ")",
+      color: C.white,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7
+    }
+  }, running ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 13,
+      height: 13,
+      border: "2px solid rgba(255,255,255,.3)",
+      borderTopColor: "#fff",
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite"
+    }
+  }), "\u062C\u0627\u0631\u064D...") : /*#__PURE__*/React.createElement(React.Fragment, null, "\uD83D\uDEF0 Sentinel-2"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 9,
+      padding: "10px 12px",
+      border: "1px solid " + C.bdrL,
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 6
+    }
+  }, "\u0633\u062C\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "monospace",
+      fontSize: 10,
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      maxHeight: 150,
+      overflowY: "auto"
+    }
+  }, logs.length === 0 ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.t4,
+      textAlign: "center",
+      padding: "10px 0"
+    }
+  }, "\u0627\u0646\u062A\u0638\u0627\u0631...") : logs.map(function (l, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        color: l.col || C.t3
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.t4,
+        marginLeft: 5
+      }
+    }, l.t), l.msg);
+  }), phase === "done" && !running && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.green,
+      marginTop: 2
+    }
+  }, "\u2713 \u0627\u0643\u062A\u0645\u0644")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 10,
+      padding: "12px 13px",
+      border: "1px solid " + C.bdrL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 9
+    }
+  }, "KM " + zn.km + " | +-" + LINE.row + "m"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      textAlign: "center",
+      marginBottom: 4
+    }
+  }, "\u0627\u0644\u0645\u0631\u062C\u0639 - ", refD), rImg ? /*#__PURE__*/React.createElement(SatImg, {
+    url: rImg.url,
+    zone: zn,
+    label: rImg.date,
+    alerts: [],
+    src: rImg.src
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 190,
+      background: C.white,
+      borderRadius: 8,
+      border: "1px dashed " + C.bdr,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: C.t4,
+      fontSize: 12
+    }
+  }, "\u0627\u0646\u062A\u0638\u0627\u0631...")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      gap: 5,
+      fontSize: 20,
+      color: C.t4,
+      padding: "0 3px"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u2192"), result && result.detected && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 15,
+      color: C.red
+    }
+  }, "\u26A0")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      textAlign: "center",
+      marginBottom: 4
+    }
+  }, "\u0627\u0644\u0631\u0635\u062F - ", curD), cImg ? /*#__PURE__*/React.createElement(SatImg, {
+    url: cImg.url,
+    zone: zn,
+    label: cImg.date,
+    alerts: result && result.encroachments || [],
+    badge: result && result.encroachments && result.encroachments[0] ? result.encroachments[0].severity : null,
+    src: cImg.src
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 190,
+      background: C.white,
+      borderRadius: 8,
+      border: "1px dashed " + C.bdr,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: C.t4,
+      fontSize: 12
+    }
+  }, "\u0627\u0646\u062A\u0638\u0627\u0631...")))), result && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: result.detected ? "#fff5f5" : "#f0fff4",
+      borderRadius: 10,
+      padding: "12px 13px",
+      border: "1px solid " + (result.detected ? C.red + "44" : C.green + "33")
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: result.detected ? C.red : C.green
+    }
+  }, result.detected ? "🚨 تعديات مكتشفة" : "✅ الحرم آمن"), scanErr && /*#__PURE__*/React.createElement(Bdg, {
+    label: scanErr,
+    color: C.amber
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t2,
+      background: C.white,
+      padding: "8px 10px",
+      borderRadius: 8,
+      marginBottom: result.encroachments && result.encroachments.length ? 9 : 0,
+      lineHeight: 1.9,
+      border: "1px solid " + C.bdrL
+    }
+  }, result.assessment), result.encroachments && result.encroachments.map(function (enc, i) {
+    var col = SVC[enc.severity] || C.red;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: C.white,
+        borderRadius: 8,
+        padding: "9px 11px",
+        marginBottom: 6,
+        borderRight: "4px solid " + col,
+        border: "1px solid " + C.bdrL,
+        borderRightWidth: 4,
+        display: "grid",
+        gridTemplateColumns: "auto 1fr auto",
+        gap: 9,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 20
+      }
+    }, TIC[enc.type] || "⚠"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        alignItems: "center",
+        marginBottom: 3
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.t1
+      }
+    }, enc.type), /*#__PURE__*/React.createElement(Bdg, {
+      label: enc.severity,
+      color: col
+    }), enc.confidence && /*#__PURE__*/React.createElement(Bdg, {
+      label: enc.confidence,
+      color: C.t3
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t2
+      }
+    }, enc.description)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        background: col + "0d",
+        border: "1px solid " + col + "33",
+        borderRadius: 8,
+        padding: "5px 9px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 800,
+        color: col,
+        fontFamily: "monospace"
+      }
+    }, enc.distance_m || "?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: col
+      }
+    }, "m")));
+  }), result.detected && result.encroachments && result.encroachments.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 5,
+      padding: "7px 10px",
+      background: C.green + "0d",
+      borderRadius: 8,
+      fontSize: 12,
+      color: C.green,
+      border: "1px solid " + C.green + "33"
+    }
+  }, "\u2705 \u062A\u0645 \u0641\u062A\u062D \u0627\u0644\u0628\u0644\u0627\u063A \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B"))))));
+}
+// ── Login ──
+// Users Management Modal
+function UsersModal(p) {
+  var s1 = React.useState(getUsers());
+  var users = s1[0];
+  var setUsers = s1[1];
+  var s2 = React.useState("");
+  var newName = s2[0];
+  var setNewName = s2[1];
+  var s3 = React.useState("field");
+  var newRole = s3[0];
+  var setNewRole = s3[1];
+  var s4 = React.useState("");
+  var newPass = s4[0];
+  var setNewPass = s4[1];
+  var s5 = React.useState("");
+  var newTitle = s5[0];
+  var setNewTitle = s5[1];
+  var s6 = React.useState(null);
+  var editId = s6[0];
+  var setEditId = s6[1];
+  var s7 = React.useState("");
+  var msg = s7[0];
+  var setMsg = s7[1];
+  function addUser() {
+    if (!newName.trim() || !newPass.trim() || !newTitle.trim()) {
+      setMsg("أدخل جميع الحقول");
+      return;
+    }
+    var nu = {
+      id: "U" + Date.now(),
+      name: newName.trim(),
+      role: newRole,
+      title: newTitle.trim(),
+      pass: newPass.trim()
+    };
+    var upd = users.concat([nu]);
+    setUsers(upd);
+    saveUsers(upd);
+    USERS.length = 0;
+    upd.forEach(function (u) {
+      USERS.push(u);
+    });
+    setNewName("");
+    setNewPass("");
+    setNewTitle("");
+    setNewRole("field");
+    setMsg("✅ تم إضافة " + nu.name);
+    setTimeout(function () {
+      setMsg("");
+    }, 3000);
+  }
+  function deleteUser(id) {
+    if (id === "U1") {
+      setMsg("لا يمكن حذف حساب المدير");
+      return;
+    }
+    var upd = users.filter(function (u) {
+      return u.id !== id;
+    });
+    setUsers(upd);
+    saveUsers(upd);
+    USERS.length = 0;
+    upd.forEach(function (u) {
+      USERS.push(u);
+    });
+    setMsg("تم الحذف");
+    setTimeout(function () {
+      setMsg("");
+    }, 2000);
+  }
+  function changePass(id, np) {
+    if (!np.trim()) return;
+    var upd = users.map(function (u) {
+      return u.id === id ? Object.assign({}, u, {
+        pass: np.trim()
+      }) : u;
+    });
+    setUsers(upd);
+    saveUsers(upd);
+    USERS.length = 0;
+    upd.forEach(function (u) {
+      USERS.push(u);
+    });
+    setEditId(null);
+    setMsg("✅ تم تغيير كلمة المرور");
+    setTimeout(function () {
+      setMsg("");
+    }, 2000);
+  }
+  var rLabel = {
+    admin: "مدير",
+    manager: "مشرف",
+    field: "فني"
+  };
+  var rColor = {
+    admin: C.orange,
+    manager: C.navy3,
+    field: C.green
+  };
+  var rIcon = {
+    admin: "👤",
+    manager: "🔧",
+    field: "👷"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.white,
+      borderRadius: 14,
+      width: "100%",
+      maxWidth: 600,
+      maxHeight: "90vh",
+      overflowY: "auto",
+      direction: "rtl",
+      boxShadow: "0 24px 80px rgba(26,46,94,0.4)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.navy,
+      padding: "14px 20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderRadius: "14px 14px 0 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\uD83D\uDC65 ", "إدارة المستخدمين"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.5)",
+      marginTop: 2
+    }
+  }, users.length, " ", "مستخدم")), /*#__PURE__*/React.createElement("button", {
+    onClick: p.onClose,
+    style: {
+      background: "rgba(255,255,255,0.15)",
+      border: "none",
+      color: C.white,
+      cursor: "pointer",
+      width: 32,
+      height: 32,
+      borderRadius: "50%",
+      fontSize: 16
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 20
+    }
+  }, msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: msg.startsWith("✅") ? C.green + "12" : "#fff5f5",
+      border: "1px solid " + (msg.startsWith("✅") ? C.green : C.red) + "44",
+      borderRadius: 8,
+      padding: "8px 12px",
+      fontSize: 12,
+      color: msg.startsWith("✅") ? C.green : C.red,
+      marginBottom: 12
+    }
+  }, msg), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 9
+    }
+  }, "المستخدمون الحاليون"), users.map(function (u) {
+    var isEdit = editId === u.id;
+    return /*#__PURE__*/React.createElement("div", {
+      key: u.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 10,
+        marginBottom: 6,
+        background: C.bg,
+        border: "1px solid " + C.bdrL
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 36,
+        height: 36,
+        borderRadius: "50%",
+        background: rColor[u.role] + "22",
+        border: "1px solid " + rColor[u.role] + "44",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, rIcon[u.role]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.navy
+      }
+    }, u.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        marginTop: 1
+      }
+    }, u.title, /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: rColor[u.role] + "18",
+        color: rColor[u.role],
+        borderRadius: 10,
+        padding: "1px 7px",
+        fontSize: 9,
+        fontWeight: 700,
+        marginRight: 5
+      }
+    }, rLabel[u.role]))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        alignItems: "center"
+      }
+    }, isEdit ? /*#__PURE__*/React.createElement(NewPassInput, {
+      onSave: function (np) {
+        changePass(u.id, np);
+      },
+      onCancel: function () {
+        setEditId(null);
+      }
+    }) : /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        setEditId(u.id);
+      },
+      style: {
+        fontSize: 10,
+        padding: "4px 9px",
+        borderRadius: 7,
+        border: "1px solid " + C.bdrL,
+        background: C.white,
+        color: C.t2,
+        cursor: "pointer",
+        fontFamily: "inherit"
+      }
+    }, "\uD83D\uDD11 ", "تغيير كلمة المرور"), u.id !== "U1" && /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        deleteUser(u.id);
+      },
+      style: {
+        fontSize: 11,
+        padding: "4px 9px",
+        borderRadius: 7,
+        border: "1px solid " + C.red + "33",
+        background: C.red + "08",
+        color: C.red,
+        cursor: "pointer",
+        fontFamily: "inherit"
+      }
+    }, "\uD83D\uDDD1")));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 11,
+      padding: "14px 16px",
+      border: "1px solid " + C.bdrL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 11
+    }
+  }, "+ ", "إضافة مستخدم جديد"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 9,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "اسم المستخدم"), /*#__PURE__*/React.createElement("input", {
+    value: newName,
+    onChange: function (e) {
+      setNewName(e.target.value);
+    },
+    placeholder: "الاسم الكامل",
+    style: {
+      width: "100%"
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "المسمى الوظيفية"), /*#__PURE__*/React.createElement("input", {
+    value: newTitle,
+    onChange: function (e) {
+      setNewTitle(e.target.value);
+    },
+    placeholder: "مثال: فني ميداني",
+    style: {
+      width: "100%"
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "كلمة المرور"), /*#__PURE__*/React.createElement("input", {
+    value: newPass,
+    onChange: function (e) {
+      setNewPass(e.target.value);
+    },
+    placeholder: "كلمة المرور",
+    style: {
+      width: "100%"
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "الصلاحية"), /*#__PURE__*/React.createElement("select", {
+    value: newRole,
+    onChange: function (e) {
+      setNewRole(e.target.value);
+    },
+    style: {
+      width: "100%"
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "admin"
+  }, "مدير"), /*#__PURE__*/React.createElement("option", {
+    value: "manager"
+  }, "مشرف"), /*#__PURE__*/React.createElement("option", {
+    value: "field"
+  }, "فني ميداني")))), /*#__PURE__*/React.createElement("button", {
+    onClick: addUser,
+    style: {
+      width: "100%",
+      padding: "10px",
+      borderRadius: 9,
+      border: "none",
+      background: "linear-gradient(135deg," + C.navy + "," + C.navy3 + ")",
+      color: C.white,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, "+ ", "إضافة المستخدم"))));
+}
+function NewPassInput(p) {
+  var s = React.useState("");
+  var val = s[0];
+  var setVal = s[1];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: val,
+    onChange: function (e) {
+      setVal(e.target.value);
+    },
+    placeholder: "كلمة جديدة",
+    style: {
+      width: 110,
+      padding: "4px 8px",
+      fontSize: 11
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      p.onSave(val);
+    },
+    style: {
+      fontSize: 10,
+      padding: "4px 8px",
+      borderRadius: 6,
+      border: "none",
+      background: C.green,
+      color: "#fff",
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "حفظ"), /*#__PURE__*/React.createElement("button", {
+    onClick: p.onCancel,
+    style: {
+      fontSize: 10,
+      padding: "4px 8px",
+      borderRadius: 6,
+      border: "1px solid " + C.bdrL,
+      background: C.white,
+      color: C.t2,
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "إلغاء"));
+}
+function Login(p) {
+  var s1 = React.useState("");
+  var u = s1[0];
+  var setU = s1[1];
+  var s2 = React.useState("");
+  var pw = s2[0];
+  var setPw = s2[1];
+  var s3 = React.useState("");
+  var err = s3[0];
+  var setErr = s3[1];
+  var s4 = React.useState(false);
+  var ld = s4[0];
+  var setLd = s4[1];
+  function go(e) {
+    e.preventDefault();
+    setErr("");
+    setLd(true);
+    setTimeout(function () {
+      var f = USERS.find(function (x) {
+        return x.name === u && x.pass === pw;
+      });
+      if (f) p.onLogin(f);else setErr("بيانات غير صحيحة");
+      setLd(false);
+    }, 700);
+  }
+  var roleIcon = {
+    admin: "👤",
+    manager: "🔧",
+    field: "👷"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: C.navy,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      direction: "rtl",
+      padding: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      backgroundImage: "radial-gradient(circle at 20% 50%,rgba(30,53,112,0.8),transparent 50%),radial-gradient(circle at 80% 20%,rgba(232,116,42,0.15),transparent 40%)",
+      pointerEvents: "none"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      maxWidth: 440,
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginBottom: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      borderRadius: 12,
+      padding: "10px 18px",
+      margin: "0 auto 12px",
+      display: "inline-block",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO,
+    alt: "National Grid SA",
+    style: {
+      width: 160,
+      height: "auto",
+      display: "block"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\u0631\u0627\u062F\u0627\u0631 \u0627\u0644\u062A\u0639\u062F\u064A\u0627\u062A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.45)",
+      marginTop: 3
+    }
+  }, "National Grid SA")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.white,
+      borderRadius: 14,
+      padding: 26,
+      boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 2
+    }
+  }, "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginBottom: 18
+    }
+  }, "\u0623\u062F\u062E\u0644 \u0628\u064A\u0627\u0646\u0627\u062A\u0643"), /*#__PURE__*/React.createElement("form", {
+    onSubmit: go
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 11,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645"), /*#__PURE__*/React.createElement("input", {
+    value: u,
+    onChange: function (e) {
+      setU(e.target.value);
+    },
+    placeholder: "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644",
+    style: {
+      width: "100%",
+      padding: "10px 12px",
+      border: "1.5px solid " + C.bdr,
+      borderRadius: 9,
+      fontFamily: "inherit",
+      fontSize: 13
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 11,
+      color: C.t2,
+      display: "block",
+      marginBottom: 3,
+      fontWeight: 600
+    }
+  }, "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631"), /*#__PURE__*/React.createElement("input", {
+    type: "password",
+    value: pw,
+    onChange: function (e) {
+      setPw(e.target.value);
+    },
+    placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    style: {
+      width: "100%",
+      padding: "10px 12px",
+      border: "1.5px solid " + C.bdr,
+      borderRadius: 9,
+      fontFamily: "inherit",
+      fontSize: 13
+    }
+  })), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff5f5",
+      border: "1px solid " + C.red + "44",
+      borderRadius: 7,
+      padding: "7px 11px",
+      fontSize: 12,
+      color: C.red,
+      marginBottom: 10
+    }
+  }, err), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    disabled: ld || !u || !pw,
+    style: {
+      width: "100%",
+      padding: "11px",
+      borderRadius: 10,
+      border: "none",
+      background: ld || !u || !pw ? C.t4 : "linear-gradient(135deg," + C.navy + "," + C.navy3 + ")",
+      color: C.white,
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: ld || !u || !pw ? "not-allowed" : "pointer",
+      fontFamily: "inherit",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8
+    }
+  }, ld ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 14,
+      height: 14,
+      border: "2px solid rgba(255,255,255,.3)",
+      borderTopColor: "#fff",
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite"
+    }
+  }), "\u062C\u0627\u0631\u064A...") : /*#__PURE__*/React.createElement(React.Fragment, null, "\u26A1 \u062F\u062E\u0648\u0644"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      padding: "10px 12px",
+      background: C.bg,
+      borderRadius: 9,
+      border: "1px solid " + C.bdrL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.t3,
+      marginBottom: 7
+    }
+  }, "\u062D\u0633\u0627\u0628\u0627\u062A \u062A\u062C\u0631\u064A\u0628\u064A\u0629"), USERS.map(function (uu) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: uu.id,
+      onClick: function () {
+        setU(uu.name);
+        setPw(uu.pass);
+      },
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "5px 7px",
+        borderRadius: 7,
+        cursor: "pointer",
+        marginBottom: 3,
+        transition: "background .15s"
+      },
+      onMouseEnter: function (e) {
+        e.currentTarget.style.background = C.white;
+      },
+      onMouseLeave: function (e) {
+        e.currentTarget.style.background = "transparent";
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 7,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 26,
+        height: 26,
+        borderRadius: "50%",
+        background: RC[uu.role] + "22",
+        border: "1px solid " + RC[uu.role] + "44",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 14
+      }
+    }, roleIcon[uu.role]), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: C.t1
+      }
+    }, uu.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, uu.title))), /*#__PURE__*/React.createElement(Bdg, {
+      label: RL[uu.role],
+      color: RC[uu.role]
+    }));
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: 12,
+      fontSize: 10,
+      color: "rgba(255,255,255,0.25)"
+    }
+  }, "\u0639\u0628\u062F\u0627\u0644\u0645\u062C\u064A\u062F \u0628\u0631\u064A\u062F\u0627\u0646 \u0627\u0644\u0639\u0646\u0632\u064A \u2013 83289")));
+}
+// ══════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════
+function App() {
+  var s1 = React.useState(null);
+  var user = s1[0];
+  var setUser = s1[1];
+  var s2 = React.useState("dashboard");
+  var page = s2[0];
+  var setPage = s2[1];
+  var s3 = React.useState([]);
+  var reports = s3[0];
+  var setReports = s3[1];
+  var s4 = React.useState({});
+  var bl = s4[0];
+  var setBL = s4[1];
+  var s5 = React.useState(false);
+  var showScan = s5[0];
+  var setShowScan = s5[1];
+  var s6 = React.useState(false);
+  var showAddLine = s6[0];
+  var setShowAddLine = s6[1];
+  var s14 = React.useState(false);
+  var showUsers = s14[0], setShowUsers = s14[1];
+  var s7 = React.useState([]);
+  var toasts = s7[0];
+  var setToasts = s7[1];
+  var s8 = React.useState(null);
+  var sel = s8[0];
+  var setSel = s8[1];
+  var s9 = React.useState("");
+  var note = s9[0];
+  var setNote = s9[1];
+  var s10 = React.useState(null);
+  var flyTo = s10[0];
+  var setFlyTo = s10[1];
+  var s11 = React.useState(null);
+  var initZone = s11[0];
+  var setInitZone = s11[1];
+  React.useEffect(function () {
+    (async function () {
+      try {
+        var r = await window.storage.get("rr_rp4");
+        if (r && r.value) setReports(JSON.parse(r.value));
+      } catch (e) {}
+    })();
+    (async function () {
+      try {
+        var r = await window.storage.get("rr_bl4");
+        if (r && r.value) setBL(JSON.parse(r.value));
+      } catch (e) {}
+    })();
+    window._rmZone = function (id) {
+      var z = ZONES.find(function (z) {
+        return z.id === id;
+      });
+      if (z) {
+        setInitZone(z);
+        setShowScan(true);
+      }
+    };
+  }, []);
+  async function saveBL(b) {
+    setBL(b);
+    try {
+      await window.storage.set("rr_bl4", JSON.stringify(b));
+    } catch (e) {}
+  }
+  async function saveRP(r) {
+    setReports(r);
+    try {
+      await window.storage.set("rr_rp4", JSON.stringify(r));
+    } catch (e) {}
+  }
+  function toast(icon, title, body, color) {
+    var id = Date.now();
+    setToasts(function (old) {
+      return old.concat([{
+        id: id,
+        icon: icon,
+        title: title,
+        body: body,
+        color: color || C.navy
+      }]);
+    });
+    setTimeout(function () {
+      setToasts(function (old) {
+        return old.filter(function (t) {
+          return t.id !== id;
+        });
+      });
+    }, 5000);
+  }
+  async function onResult(data) {
+    if (!data.result || !data.result.detected || !data.result.encroachments.length) {
+      toast("✅", "الحرم آمن", "KM " + data.zone.km, C.green);
+      return;
+    }
+    var off = function () {
+      return (Math.random() - 0.5) * 0.005;
+    };
+    var created = data.result.encroachments.map(function (enc) {
+      return {
+        id: mkId(),
+        type: enc.type || "أخرى",
+        severity: enc.severity || "متوسط",
+        description: enc.description,
+        line: LINE.name,
+        km: data.zone.km,
+        zoneId: data.zone.id,
+        lat: data.zone.lat + off(),
+        lng: data.zone.lng + off(),
+        distance_m: enc.distance_m,
+        confidence: enc.confidence,
+        tower: towerNum(data.zone.km),
+        status: JADID,
+        date: today(),
+        time: nowTime(),
+        imgUrl: data.cUrl,
+        prevImgUrl: data.rUrl,
+        imgSrc: "Copernicus",
+        updates: [{
+          date: todayAr(),
+          time: nowTime(),
+          text: "كُشف (" + data.refDate + "→" + data.curDate + "): " + enc.description,
+          by: "AI"
+        }]
+      };
+    });
+    var updated = created.concat(reports);
+    await saveRP(updated);
+    toast("🚨", "تعدٍّ مكتشف", created.length + " – KM " + data.zone.km, C.red);
+    setFlyTo({
+      lat: data.zone.lat,
+      lng: data.zone.lng
+    });
+  }
+  async function updStatus(id, s) {
+    var upd = {
+      date: todayAr(),
+      time: nowTime(),
+      text: "تحديث: " + s,
+      by: user ? user.name : ""
+    };
+    var updated = reports.map(function (r) {
+      return r.id === id ? Object.assign({}, r, {
+        status: s,
+        updates: r.updates.concat([upd])
+      }) : r;
+    });
+    await saveRP(updated);
+    setSel(function (prev) {
+      return prev && prev.id === id ? Object.assign({}, prev, {
+        status: s,
+        updates: prev.updates.concat([upd])
+      }) : prev;
+    });
+    toast("✅", "تم التحديث", id + " – " + s);
+  }
+  async function addNote(id) {
+    if (!note.trim()) return;
+    var upd = {
+      date: todayAr(),
+      time: nowTime(),
+      text: note,
+      by: user ? user.name : ""
+    };
+    var updated = reports.map(function (r) {
+      return r.id === id ? Object.assign({}, r, {
+        updates: r.updates.concat([upd])
+      }) : r;
+    });
+    await saveRP(updated);
+    setSel(function (prev) {
+      return prev ? Object.assign({}, prev, {
+        updates: prev.updates.concat([upd])
+      }) : prev;
+    });
+    setNote("");
+  }
+  var openR = reports.filter(function (r) {
+    return r.status !== MUGHLA;
+  });
+  var critR = reports.filter(function (r) {
+    return r.severity === "حرج" && r.status !== MUGHLA;
+  });
+  var blCount = Object.keys(bl).length;
+  var ALL_TABS = [{
+    id: "dashboard",
+    l: "لوحة التحكم",
+    roles: ["admin", "manager", "field"]
+  }, {
+    id: "map",
+    l: "الخريطة",
+    roles: ["admin", "manager", "field"]
+  }, {
+    id: "alerts",
+    l: "التنبيهات",
+    roles: ["admin", "manager", "field"],
+    badge: openR.length
+  }, {
+    id: "photos",
+    l: "📸 صور التعديات",
+    roles: ["admin", "manager"]
+  }, {
+    id: "compare",
+    l: "المقارنة",
+    roles: ["admin", "manager"]
+  }, {
+    id: "reports",
+    l: "التقارير",
+    roles: ["admin", "manager"]
+  }];
+  var tabs = user ? ALL_TABS.filter(function (t) {
+    return t.roles.includes(user.role);
+  }) : ALL_TABS;
+  if (!user) return /*#__PURE__*/React.createElement(Login, {
+    onLogin: function (u) {
+      setUser(u);
+      toast("✅", "مرحباً", u.name, RC[u.role]);
+    }
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    dir: "rtl",
+    style: {
+      fontFamily: "'IBM Plex Sans Arabic',sans-serif",
+      display: "flex",
+      flexDirection: "column",
+      height: "100vh",
+      background: C.bg,
+      color: C.t1,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("header", {
+    style: {
+      background: C.navy,
+      padding: "0 16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      height: 54,
+      flexShrink: 0,
+      boxShadow: "0 2px 8px rgba(26,46,94,0.3)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, (user.role === "admin" || user.role === "manager") && /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setInitZone(null);
+      setShowScan(true);
+    },
+    style: {
+      background: C.orange,
+      color: C.white,
+      border: "none",
+      borderRadius: 8,
+      padding: "7px 14px",
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "\u26A1 \u062A\u062D\u0644\u064A\u0644 \u062C\u062F\u064A\u062F"), user.role === "admin" && /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowAddLine(true);
+    },
+    style: {
+      background: "rgba(255,255,255,0.12)",
+      color: C.white,
+      border: "1px solid rgba(255,255,255,0.25)",
+      borderRadius: 8,
+      padding: "6px 12px",
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18,
+      lineHeight: 1
+    }
+  }, "\u2795"), " \u0625\u0636\u0627\u0641\u0629 \u062E\u0637"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,0.1)",
+      borderRadius: 8,
+      padding: "4px 10px",
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.85)",
+      fontWeight: 500
+    }
+  }, user.name), /*#__PURE__*/React.createElement(Bdg, {
+    label: RL[user.role],
+    color: RC[user.role]
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO,
+    alt: "National Grid SA",
+    style: {
+      height: 28,
+      width: "auto",
+      background: "#fff",
+      borderRadius: 6,
+      padding: "2px 6px",
+      display: "block",
+      margin: "0 auto 1px"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\u0631\u0627\u062F\u0627\u0631 \u0627\u0644\u062A\u0639\u062F\u064A\u0627\u062A")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, critR.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.red + "22",
+      border: "1px solid " + C.red + "55",
+      borderRadius: 8,
+      padding: "4px 10px",
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement(SIco, {
+    status: JADID,
+    size: 10
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.red,
+      fontWeight: 700
+    }
+  }, critR.length, " \u062D\u0631\u062C")), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setUser(null);
+    },
+    style: {
+      background: "rgba(255,255,255,0.08)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      color: "rgba(255,255,255,0.5)",
+      borderRadius: 8,
+      padding: "5px 10px",
+      fontSize: 11,
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "\u062E\u0631\u0648\u062C"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.white,
+      borderBottom: "2px solid " + C.bdrL,
+      padding: "0 16px",
+      display: "flex",
+      flexShrink: 0
+    }
+  }, tabs.map(function (t) {
+    var active = page === t.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: t.id,
+      onClick: function () {
+        setPage(t.id);
+      },
+      style: {
+        padding: "11px 14px",
+        border: "none",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        fontSize: 12,
+        fontWeight: active ? 700 : 500,
+        color: active ? C.navy : C.t3,
+        background: "transparent",
+        borderBottom: active ? "2px solid " + C.orange : "2px solid transparent",
+        marginBottom: "-2px",
+        transition: "all .15s",
+        display: "flex",
+        alignItems: "center",
+        gap: 5
+      }
+    }, t.l, t.badge > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: C.red,
+        color: C.white,
+        borderRadius: 10,
+        padding: "1px 6px",
+        fontSize: 9,
+        fontWeight: 700
+      }
+    }, t.badge));
+  })), /*#__PURE__*/React.createElement("main", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: "14px 16px"
+    }
+  }, page === "dashboard" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 2
+    }
+  }, "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3
+    }
+  }, LINE.name, " \xB7 ", LINE.km, " \u0643\u0645 \xB7 Sentinel-2")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4,1fr)",
+      gap: 10,
+      marginBottom: 14
+    }
+  }, [{
+    l: "إجمالي البلاغات",
+    v: reports.length,
+    sub: openR.length + " مفتوح",
+    c: C.navy,
+    i: "📋"
+  }, {
+    l: "تعديات حرجة",
+    v: critR.length,
+    sub: "تدخل فوري",
+    c: C.red,
+    i: "🚨"
+  }, {
+    l: "مناطق مؤرشفة",
+    v: blCount,
+    sub: "من " + ZONES.length,
+    c: C.green,
+    i: "✅"
+  }, {
+    l: "تغطية المسح",
+    v: Math.round(blCount / ZONES.length * 100) + "%",
+    sub: blCount + "/" + ZONES.length,
+    c: C.orange,
+    i: "📡"
+  }].map(function (s) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: s.l,
+      className: "card",
+      style: {
+        position: "relative",
+        overflow: "hidden",
+        transition: "transform .2s"
+      },
+      onMouseEnter: function (e) {
+        e.currentTarget.style.transform = "translateY(-2px)";
+      },
+      onMouseLeave: function (e) {
+        e.currentTarget.style.transform = "";
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        background: s.c + "14",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 16
+      }
+    }, s.i), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: s.c,
+        background: s.c + "12",
+        padding: "2px 7px",
+        borderRadius: 20,
+        alignSelf: "flex-start"
+      }
+    }, s.sub)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 30,
+        fontWeight: 800,
+        color: s.c,
+        lineHeight: 1,
+        marginBottom: 3
+      }
+    }, s.v), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3
+      }
+    }, s.l), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        background: "linear-gradient(90deg,transparent," + s.c + "88)"
+      }
+    }));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 12,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      color: C.navy
+    }
+  }, "\u062A\u063A\u0637\u064A\u0629 \u0627\u0644\u0645\u0633\u062D"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.green,
+      fontWeight: 700
+    }
+  }, Math.round(blCount / ZONES.length * 100), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 7,
+      background: C.bg,
+      borderRadius: 4,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: Math.round(blCount / ZONES.length * 100) + "%",
+      background: "linear-gradient(90deg," + C.navy + "," + C.green + ")",
+      borderRadius: 4,
+      transition: "width 1s"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 300px",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: C.navy
+    }
+  }, "\u0622\u062E\u0631 \u0627\u0644\u0628\u0644\u0627\u063A\u0627\u062A"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setPage("alerts");
+    },
+    style: {
+      fontSize: 11,
+      color: C.navy,
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      textDecoration: "underline"
+    }
+  }, "\u0627\u0644\u0643\u0644")), reports.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "20px 0",
+      color: C.t4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 26,
+      marginBottom: 6
+    }
+  }, "\uD83D\uDEF0"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12
+    }
+  }, "\u0644\u0627 \u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0628\u0639\u062F")) : reports.slice(0, 5).map(function (r) {
+    var col = SVC[r.severity] || C.t3;
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      onClick: function () {
+        setSel(r);
+        setPage("alerts");
+      },
+      style: {
+        marginBottom: 5,
+        padding: "7px 9px",
+        borderRadius: 8,
+        cursor: "pointer",
+        borderRight: "3px solid " + col,
+        background: C.bg,
+        border: "1px solid " + C.bdrL,
+        borderRightWidth: 3,
+        transition: "all .15s"
+      },
+      onMouseEnter: function (e) {
+        e.currentTarget.style.background = C.white;
+      },
+      onMouseLeave: function (e) {
+        e.currentTarget.style.background = C.bg;
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 2
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: r.status,
+      size: 12
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: C.navy
+      }
+    }, r.type), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.severity,
+      color: col,
+      size: 9
+    })), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.status,
+      color: STC[r.status] || C.t3,
+      size: 9
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3
+      }
+    }, "KM ", r.km, " \xB7 \uD83D\uDDFC \u0628\u0631\u062C ", r.tower, " \xB7 ", r.date, " ", r.time));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 10
+    }
+  }, "\u0645\u0633\u062A\u0648\u064A\u0627\u062A \u0627\u0644\u062E\u0637\u0648\u0631\u0629"), [{
+    l: "حرج",
+    sub: "0-20m",
+    c: C.red
+  }, {
+    l: "متوسط",
+    sub: "20-35m",
+    c: C.amber
+  }, {
+    l: "منخفض",
+    sub: "35-50m",
+    c: C.yellow
+  }].map(function (s) {
+    var cnt = reports.filter(function (r) {
+      return r.severity === s.l && r.status !== MUGHLA;
+    }).length;
+    return /*#__PURE__*/React.createElement("div", {
+      key: s.l,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "8px 10px",
+        borderRadius: 8,
+        marginBottom: 6,
+        background: s.c + "08",
+        border: "1px solid " + s.c + "22"
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: s.c,
+        marginBottom: 1
+      }
+    }, s.l, " \u2013 ", s.sub)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 28,
+        fontWeight: 800,
+        color: s.c
+      }
+    }, cnt));
+  })))), page === "map" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 2
+    }
+  }, "\u0627\u0644\u062E\u0631\u064A\u0637\u0629 \u0627\u0644\u062A\u0641\u0627\u0639\u0644\u064A\u0629"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3
+    }
+  }, LINE.name, " \u2013 ", LINE.towers, " \u0628\u0631\u062C \u2013 ", ZONES.length, " \u0645\u0646\u0637\u0642\u0629 \u0645\u0633\u062D")), /*#__PURE__*/React.createElement(MapView, {
+    reports: reports,
+    bl: bl,
+    flyTo: flyTo,
+    h: 430,
+    onZone: function (id) {
+      var z = ZONES.find(function (z) {
+        return z.id === id;
+      });
+      if (z) {
+        setInitZone(z);
+        setShowScan(true);
+      }
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: 11
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 8
+    }
+  }, ZONES.length, " \u0645\u0646\u0637\u0642\u0629 \u2013 \u0627\u0636\u063A\u0637 \u0644\u0644\u062A\u062D\u0644\u064A\u0644"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5
+    }
+  }, ZONES.map(function (z) {
+    var hasA = reports.some(function (r) {
+      return r.zoneId === z.id && r.status !== MUGHLA;
+    });
+    var hasB = !!bl[z.id];
+    return /*#__PURE__*/React.createElement("button", {
+      key: z.id,
+      onClick: function () {
+        setFlyTo({
+          lat: z.lat,
+          lng: z.lng
+        });
+        setTimeout(function () {
+          setInitZone(z);
+          setShowScan(true);
+        }, 700);
+      },
+      style: {
+        padding: "4px 9px",
+        borderRadius: 7,
+        border: "1px solid " + (hasA ? C.red + "55" : hasB ? C.green + "44" : C.bdrL),
+        background: hasA ? C.red + "0d" : hasB ? C.green + "0a" : C.bg,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        fontSize: 11,
+        color: hasA ? C.red : hasB ? C.green : C.t3,
+        fontWeight: hasA || hasB ? 700 : 400
+      }
+    }, hasA ? "⚠" : hasB ? "✓" : "○", " ", z.km);
+  })))), page === "alerts" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 3
+    }
+  }, "\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0648\u0627\u0644\u0628\u0644\u0627\u063A\u0627\u062A"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginBottom: 13
+    }
+  }, reports.length, " \u0628\u0644\u0627\u063A \xB7 ", openR.length, " \u0645\u0641\u062A\u0648\u062D \xB7 ", critR.length, " \u062D\u0631\u062C"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 410px",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", null, reports.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      textAlign: "center",
+      padding: 50,
+      color: C.t4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 34,
+      marginBottom: 10
+    }
+  }, "\uD83D\uDEF0"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: C.t2
+    }
+  }, "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u0644\u0627\u063A\u0627\u062A \u0628\u0639\u062F")), reports.map(function (r) {
+    var col = SVC[r.severity] || C.t3;
+    var isSel = sel && sel.id === r.id;
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      className: "rrow" + (isSel ? " sel" : ""),
+      onClick: function () {
+        setSel(r);
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 5
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 7,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: r.status,
+      size: 16
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 17
+      }
+    }, TIC[r.type] || "⚠"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "monospace",
+        fontSize: 11,
+        fontWeight: 700,
+        color: C.navy
+      }
+    }, r.id), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.severity,
+      color: col
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        marginTop: 1
+      }
+    }, "KM ", r.km, " \xB7 \uD83D\uDDFC \u0628\u0631\u062C ", r.tower, " \xB7 ", r.date, " ", r.time))), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.status,
+      color: STC[r.status] || C.t3
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t2,
+        padding: "5px 8px",
+        background: col + "0d",
+        borderRadius: 7,
+        borderRight: "3px solid " + col,
+        marginBottom: 5
+      }
+    }, r.description ? r.description.slice(0, 85) + "..." : "—"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("a", {
+      href: navUrl(r.lat, r.lng),
+      target: "_blank",
+      onClick: function (e) {
+        e.stopPropagation();
+      },
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "4px 10px",
+        background: C.navy,
+        borderRadius: 7,
+        color: C.white,
+        fontSize: 10,
+        fontWeight: 700
+      }
+    }, "\uD83E\uDDED \u0645\u0644\u0627\u062D\u0629"), r.distance_m && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: col,
+        fontWeight: 600
+      }
+    }, r.distance_m, "m \u0645\u0646 \u0627\u0644\u062E\u0637")));
+  })), sel ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "sticky",
+      top: 0,
+      maxHeight: "calc(100vh - 130px)",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card fade"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+      paddingBottom: 9,
+      borderBottom: "1px solid " + C.bdrL
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(SIco, {
+    status: sel.status,
+    size: 22
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "monospace",
+      fontSize: 13,
+      fontWeight: 700,
+      color: C.navy
+    }
+  }, sel.id), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: sel.status !== MUGHLA ? C.red : C.green
+    }
+  }, sel.status !== MUGHLA ? "🔴 نشط" : "✅ مغلق"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4,
+      flexWrap: "wrap",
+      justifyContent: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement(Bdg, {
+    label: sel.severity,
+    color: SVC[sel.severity] || C.t3
+  }), /*#__PURE__*/React.createElement(Bdg, {
+    label: sel.status,
+    color: STC[sel.status] || C.t3
+  }))), sel.imgUrl && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.t2,
+      marginBottom: 6
+    }
+  }, "\uD83D\uDEF0 \u0635\u0648\u0631 Sentinel-2 \u2013 \u0642\u0628\u0644 / \u0628\u0639\u062F"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 7
+    }
+  }, sel.prevImgUrl && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      textAlign: "center",
+      marginBottom: 3
+    }
+  }, "\uD83D\uDCF8 \u0642\u0628\u0644 \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement(SatImg, {
+    url: sel.prevImgUrl,
+    zone: ZONES.find(function (z) {
+      return z.id === sel.zoneId;
+    }) || ZONES[0],
+    label: "\u0627\u0644\u0645\u0631\u062C\u0639",
+    alerts: [],
+    src: "Copernicus",
+    h: 155
+  })), sel.prevImgUrl && sel.imgUrl && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      gap: 4,
+      fontSize: 18,
+      color: C.t4,
+      padding: "0 2px"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u2192"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: SVC[sel.severity] || C.red
+    }
+  }, "\u26A0")), sel.imgUrl && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3,
+      textAlign: "center",
+      marginBottom: 3
+    }
+  }, "\uD83D\uDCF8 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement(SatImg, {
+    url: sel.imgUrl,
+    zone: ZONES.find(function (z) {
+      return z.id === sel.zoneId;
+    }) || ZONES[0],
+    label: sel.date,
+    alerts: [{
+      severity: sel.severity
+    }],
+    badge: sel.severity,
+    src: "Copernicus",
+    h: 155
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6,
+      marginBottom: 8
+    }
+  }, [["رقم البرج", "🗼 برج " + (sel.tower || "—")], ["KM", "KM " + sel.km], ["تاريخ الرصد", sel.date], ["وقت الرصد", sel.time || "—"], ["المسافة", (sel.distance_m || "?") + "m"], ["الثقة", sel.confidence || "—"]].map(function (item) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: item[0],
+      style: {
+        background: C.bg,
+        borderRadius: 7,
+        padding: "6px 9px",
+        border: "1px solid " + C.bdrL
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: C.t3,
+        marginBottom: 2
+      }
+    }, item[0]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t1,
+        fontWeight: 600
+      }
+    }, item[1]));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 8,
+      padding: "8px 10px",
+      fontSize: 12,
+      color: C.t2,
+      lineHeight: 1.8,
+      marginBottom: 9,
+      border: "1px solid " + C.bdrL
+    }
+  }, sel.description), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.navy + "08",
+      borderRadius: 9,
+      padding: "10px 12px",
+      border: "1px solid " + C.navy + "22",
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 6
+    }
+  }, "\uD83D\uDCCD \u0625\u062D\u062F\u0627\u062B\u064A\u0627\u062A \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "monospace",
+      fontSize: 11,
+      color: C.t1,
+      marginBottom: 8
+    }
+  }, sel.lat.toFixed(6), "N,  ", sel.lng.toFixed(6), "E"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: navUrl(sel.lat, sel.lng),
+    target: "_blank",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+      padding: "8px",
+      background: C.navy,
+      borderRadius: 8,
+      color: C.white,
+      fontSize: 12,
+      fontWeight: 700
+    }
+  }, "\uD83E\uDDED \u0627\u0628\u062F\u0623 \u0627\u0644\u0645\u0644\u0627\u062D\u0629"), /*#__PURE__*/React.createElement("a", {
+    href: mapUrl(sel.lat, sel.lng),
+    target: "_blank",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+      padding: "8px",
+      background: C.bg,
+      borderRadius: 8,
+      color: C.navy,
+      fontSize: 12,
+      fontWeight: 700,
+      border: "1px solid " + C.bdr
+    }
+  }, "\uD83D\uDDFA \u0639\u0631\u0636"))), /*#__PURE__*/React.createElement(FieldPh, {
+    reportId: sel.id
+  }), (user.role === "admin" || user.role === "manager") && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 9,
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      marginBottom: 6,
+      fontWeight: 700
+    }
+  }, "\u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062D\u0627\u0644\u0629"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5
+    }
+  }, STATUS_LIST.map(function (s) {
+    var isCur = sel.status === s;
+    var col = STC[s] || C.t3;
+    return /*#__PURE__*/React.createElement("button", {
+      key: s,
+      onClick: function () {
+        updStatus(sel.id, s);
+      },
+      style: {
+        fontSize: 11,
+        padding: "5px 10px",
+        borderRadius: 8,
+        border: "1.5px solid " + (isCur ? col : C.bdr),
+        background: isCur ? col + "14" : C.white,
+        color: isCur ? col : C.t2,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        fontWeight: isCur ? 700 : 400,
+        display: "flex",
+        alignItems: "center",
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: s,
+      size: 10
+    }), s);
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t2,
+      marginBottom: 5,
+      fontWeight: 700
+    }
+  }, "\u0633\u062C\u0644 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: 110,
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      marginBottom: 8
+    }
+  }, sel.updates && sel.updates.map(function (upd, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: C.bg,
+        borderRadius: 7,
+        padding: "6px 9px",
+        borderRight: "2px solid " + C.navy + "33",
+        fontSize: 11,
+        border: "1px solid " + C.bdrL
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        color: C.t4,
+        marginBottom: 2
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 600,
+        color: C.t2
+      }
+    }, upd.by), /*#__PURE__*/React.createElement("span", null, upd.date, " ", upd.time || "")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.t1
+      }
+    }, upd.text));
+  })), /*#__PURE__*/React.createElement("textarea", {
+    value: note,
+    onChange: function (e) {
+      setNote(e.target.value);
+    },
+    rows: 2,
+    placeholder: "\u0645\u0644\u0627\u062D\u0638\u0629 \u0645\u064A\u062F\u0627\u0646\u064A\u0629...",
+    style: {
+      width: "100%",
+      resize: "none",
+      marginBottom: 7
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      addNote(sel.id);
+    },
+    style: {
+      width: "100%",
+      padding: "9px",
+      borderRadius: 9,
+      border: "none",
+      background: C.navy,
+      color: C.white,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, "\u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062D\u0638\u0629"))) : /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      height: 200,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24,
+      opacity: .2
+    }
+  }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: C.t4
+    }
+  }, "\u0627\u062E\u062A\u0631 \u062A\u0646\u0628\u064A\u0647\u0627\u064B \u0644\u0644\u062A\u0641\u0627\u0635\u064A\u0644")))), page === "photos" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 3
+    }
+  }, "\uD83D\uDCF8 \u0635\u0648\u0631 \u0627\u0644\u062A\u0639\u062F\u064A\u0627\u062A"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginBottom: 14
+    }
+  }, "\u0623\u0631\u0634\u064A\u0641 \u0642\u0627\u0646\u0648\u0646\u064A \u2013 Sentinel-2 + \u0635\u0648\u0631 \u0645\u064A\u062F\u0627\u0646\u064A\u0629"), reports.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      textAlign: "center",
+      padding: 60,
+      color: C.t4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 34,
+      marginBottom: 12
+    }
+  }, "\uD83D\uDCF7"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 600,
+      color: C.t2
+    }
+  }, "\u0644\u0627 \u062A\u0648\u062C\u062F \u062A\u0639\u062F\u064A\u0627\u062A \u0628\u0639\u062F")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 14
+    }
+  }, reports.map(function (r) {
+    var z = ZONES.find(function (z) {
+      return z.id === r.zoneId;
+    }) || ZONES[0];
+    var col = SVC[r.severity] || C.t3;
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      className: "card",
+      style: {
+        border: "1px solid " + (r.status !== MUGHLA ? col + "44" : C.green + "33")
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+        paddingBottom: 8,
+        borderBottom: "1px solid " + C.bdrL
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: r.status,
+      size: 20
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "monospace",
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.navy
+      }
+    }, r.id), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        marginTop: 1
+      }
+    }, LINE.name, " \xB7 KM ", r.km, " \xB7 \uD83D\uDDFC \u0628\u0631\u062C ", r.tower, " \xB7 ", r.date, " ", r.time))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement(Bdg, {
+      label: r.severity,
+      color: col
+    }), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.status,
+      color: STC[r.status] || C.t3
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.t2,
+        background: C.bg,
+        padding: "8px 11px",
+        borderRadius: 8,
+        marginBottom: 10,
+        border: "1px solid " + C.bdrL
+      }
+    }, r.description), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 9,
+        alignItems: "center",
+        padding: "8px 11px",
+        background: C.navy + "08",
+        borderRadius: 8,
+        border: "1px solid " + C.navy + "22",
+        marginBottom: 10,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontFamily: "monospace",
+        color: C.t1
+      }
+    }, "\uD83D\uDCCD ", r.lat.toFixed(5), "N, ", r.lng.toFixed(5), "E"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        marginRight: "auto"
+      }
+    }, /*#__PURE__*/React.createElement("a", {
+      href: navUrl(r.lat, r.lng),
+      target: "_blank",
+      style: {
+        padding: "5px 10px",
+        background: C.navy,
+        borderRadius: 7,
+        color: C.white,
+        fontSize: 11,
+        fontWeight: 700
+      }
+    }, "\uD83E\uDDED \u0627\u0628\u062F\u0623 \u0627\u0644\u0645\u0644\u0627\u062D\u0629"), /*#__PURE__*/React.createElement("a", {
+      href: mapUrl(r.lat, r.lng),
+      target: "_blank",
+      style: {
+        padding: "5px 10px",
+        background: C.bg,
+        borderRadius: 7,
+        color: C.navy,
+        fontSize: 11,
+        fontWeight: 700,
+        border: "1px solid " + C.bdr
+      }
+    }, "\uD83D\uDDFA \u0639\u0631\u0636"))), (r.imgUrl || r.prevImgUrl) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: C.t2,
+        marginBottom: 7
+      }
+    }, "\uD83D\uDEF0 \u0635\u0648\u0631 \u0627\u0644\u0623\u0642\u0645\u0627\u0631 \u0627\u0644\u0635\u0646\u0627\u0639\u064A\u0629"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 9
+      }
+    }, r.prevImgUrl && /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        textAlign: "center",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDCF8 \u0642\u0628\u0644 \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement(SatImg, {
+      url: r.prevImgUrl,
+      zone: z,
+      label: "\u0627\u0644\u0645\u0631\u062C\u0639",
+      alerts: [],
+      src: "Copernicus",
+      h: 165
+    })), r.prevImgUrl && r.imgUrl && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 4,
+        fontSize: 18,
+        color: C.t4,
+        padding: "0 3px"
+      }
+    }, /*#__PURE__*/React.createElement("span", null, "\u2192"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: col
+      }
+    }, "\u26A0")), r.imgUrl && /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        textAlign: "center",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDCF8 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062A\u0639\u062F\u064A \u2013 ", r.date), /*#__PURE__*/React.createElement(SatImg, {
+      url: r.imgUrl,
+      zone: z,
+      label: r.date,
+      alerts: [{
+        severity: r.severity
+      }],
+      badge: r.severity,
+      src: "Copernicus",
+      h: 165
+    }))), r.distance_m && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 7,
+        padding: "6px 10px",
+        background: col + "0d",
+        borderRadius: 7,
+        fontSize: 11,
+        color: col,
+        fontWeight: 700,
+        border: "1px solid " + col + "22"
+      }
+    }, r.distance_m, "m \u2013 ", r.distance_m <= 20 ? "حرج" : r.distance_m <= 35 ? "متوسط" : "منخفض")), /*#__PURE__*/React.createElement(FieldPh, {
+      reportId: r.id
+    }));
+  }))), page === "compare" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 3
+    }
+  }, "\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u0635\u0648\u0631"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3,
+      marginBottom: 14
+    }
+  }, "\u0623\u0631\u0634\u064A\u0641 \u0642\u0627\u0646\u0648\u0646\u064A \u2013 Sentinel-2"), reports.filter(function (r) {
+    return r.imgUrl && r.prevImgUrl;
+  }).length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      textAlign: "center",
+      padding: 60
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 34,
+      marginBottom: 12,
+      opacity: .3
+    }
+  }, "\uD83D\uDEF0"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: C.t3
+    }
+  }, "\u0644\u0627 \u062A\u0648\u062C\u062F \u0635\u0648\u0631 \u0628\u0639\u062F")) : reports.filter(function (r) {
+    return r.imgUrl && r.prevImgUrl;
+  }).map(function (r) {
+    var z = ZONES.find(function (z) {
+      return z.id === r.zoneId;
+    }) || ZONES[0];
+    var col = SVC[r.severity] || C.t3;
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      className: "card",
+      style: {
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: r.status,
+      size: 18
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.navy
+      }
+    }, LINE.name, " \u2013 KM ", r.km, " \u2013 \uD83D\uDDFC \u0628\u0631\u062C ", r.tower), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3
+      }
+    }, r.type, " \xB7 ", r.date, " ", r.time))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 5
+      }
+    }, /*#__PURE__*/React.createElement(Bdg, {
+      label: r.severity,
+      color: col
+    }), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.status,
+      color: STC[r.status] || C.t3
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 9
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        textAlign: "center",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDCF8 \u0642\u0628\u0644 \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement(SatImg, {
+      url: r.prevImgUrl,
+      zone: z,
+      label: "\u0627\u0644\u0645\u0631\u062C\u0639",
+      alerts: [],
+      src: "Copernicus"
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 4,
+        fontSize: 18,
+        color: C.t4,
+        padding: "0 4px"
+      }
+    }, /*#__PURE__*/React.createElement("span", null, "\u2192"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14,
+        color: col
+      }
+    }, "\u26A0")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.t3,
+        textAlign: "center",
+        marginBottom: 4
+      }
+    }, "\uD83D\uDCF8 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062A\u0639\u062F\u064A"), /*#__PURE__*/React.createElement(SatImg, {
+      url: r.imgUrl,
+      zone: z,
+      label: r.date,
+      alerts: [{
+        severity: r.severity
+      }],
+      badge: r.severity,
+      src: "Copernicus"
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        padding: "7px 10px",
+        background: C.navy + "08",
+        borderRadius: 8,
+        fontSize: 11,
+        display: "flex",
+        gap: 12,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.t2,
+        fontFamily: "monospace"
+      }
+    }, "\uD83D\uDCCD ", r.lat.toFixed(5), "N, ", r.lng.toFixed(5), "E"), /*#__PURE__*/React.createElement("a", {
+      href: navUrl(r.lat, r.lng),
+      target: "_blank",
+      style: {
+        color: C.navy,
+        fontWeight: 700
+      }
+    }, "\uD83E\uDDED \u0627\u0628\u062F\u0623 \u0627\u0644\u0645\u0644\u0627\u062D\u0629"), /*#__PURE__*/React.createElement("a", {
+      href: mapUrl(r.lat, r.lng),
+      target: "_blank",
+      style: {
+        color: C.navy,
+        fontWeight: 700
+      }
+    }, "\uD83D\uDDFA \u0639\u0631\u0636")));
+  })), page === "reports" && /*#__PURE__*/React.createElement("div", {
+    className: "fade"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 2
+    }
+  }, "\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 11,
+      color: C.t3
+    }
+  }, reports.length, " \u0628\u0644\u0627\u063A")), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      var txt = "رادار التعديات\n" + LINE.name + "\n" + today() + "\n\n" + reports.map(function (r) {
+        return r.id + "|" + r.type + "|" + r.severity + "|KM " + r.km + "|برج " + r.tower + "|" + r.status + "|" + r.date + " " + r.time + "|" + r.lat.toFixed(5) + "N," + r.lng.toFixed(5) + "E";
+      }).join("\n");
+      var b = new Blob(["\uFEFF" + txt], {
+        type: "text/plain;charset=utf-8"
+      });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = "radar_" + today() + ".txt";
+      a.click();
+    },
+    style: {
+      padding: "8px 14px",
+      borderRadius: 9,
+      border: "none",
+      background: C.navy,
+      color: C.white,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 12,
+      fontWeight: 700
+    }
+  }, "\uD83D\uDDA8 \u062A\u0635\u062F\u064A\u0631")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4,1fr)",
+      gap: 10,
+      marginBottom: 12
+    }
+  }, [{
+    l: "إجمالي",
+    v: reports.length,
+    c: C.navy
+  }, {
+    l: "حرجة",
+    v: critR.length,
+    c: C.red
+  }, {
+    l: "مفتوحة",
+    v: openR.length,
+    c: C.amber
+  }, {
+    l: "مغلقة",
+    v: reports.length - openR.length,
+    c: C.green
+  }].map(function (s) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: s.l,
+      className: "card",
+      style: {
+        borderTop: "3px solid " + s.c,
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 28,
+        fontWeight: 800,
+        color: s.c
+      }
+    }, s.v), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3,
+        marginTop: 3
+      }
+    }, s.l));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      padding: 0,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.navy,
+      padding: "11px 16px",
+      display: "flex",
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\u062C\u062F\u0648\u0644 \u0627\u0644\u0628\u0644\u0627\u063A\u0627\u062A"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: "rgba(255,255,255,0.5)"
+    }
+  }, reports.length, " \u0633\u062C\u0644")), reports.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 28,
+      color: C.t4,
+      fontSize: 12
+    }
+  }, "\u0644\u0627 \u0628\u064A\u0627\u0646\u0627\u062A") : reports.map(function (r) {
+    var col = SVC[r.severity] || C.t3;
+    return /*#__PURE__*/React.createElement("div", {
+      key: r.id,
+      onClick: function () {
+        setSel(r);
+        setPage("alerts");
+      },
+      style: {
+        padding: "9px 14px",
+        display: "grid",
+        gridTemplateColumns: "26px 90px 60px 70px 1fr 70px 90px",
+        gap: 6,
+        alignItems: "center",
+        borderBottom: "1px solid " + C.bdrL,
+        cursor: "pointer",
+        transition: "background .15s"
+      },
+      onMouseEnter: function (e) {
+        e.currentTarget.style.background = C.bg;
+      },
+      onMouseLeave: function (e) {
+        e.currentTarget.style.background = C.white;
+      }
+    }, /*#__PURE__*/React.createElement(SIco, {
+      status: r.status,
+      size: 14
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "monospace",
+        fontSize: 11,
+        fontWeight: 700,
+        color: C.navy
+      }
+    }, r.id), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.severity,
+      color: col,
+      size: 9
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.t2
+      }
+    }, "\u0628\u0631\u062C ", r.tower), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: C.t2
+      }
+    }, r.description ? r.description.slice(0, 40) + "..." : "—"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.t4
+      }
+    }, r.date), /*#__PURE__*/React.createElement(Bdg, {
+      label: r.status,
+      color: STC[r.status] || C.t3,
+      size: 9
+    }));
+  })))), showScan && /*#__PURE__*/React.createElement(ScanModal, {
+    onClose: function () {
+      setShowScan(false);
+      setInitZone(null);
+    },
+    onResult: onResult,
+    bl: bl,
+    saveBL: saveBL,
+    initZone: initZone
+  }), showAddLine && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(26,46,94,0.65)",
+      zIndex: 1000,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.white,
+      borderRadius: 14,
+      width: "100%",
+      maxWidth: 480,
+      direction: "rtl",
+      boxShadow: "0 24px 80px rgba(26,46,94,0.4)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.navy,
+      padding: "14px 20px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderRadius: "14px 14px 0 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: C.white
+    }
+  }, "\u2795 \u0625\u0636\u0627\u0641\u0629 \u062E\u0637 \u0646\u0642\u0644 \u062C\u062F\u064A\u062F"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowAddLine(false);
+    },
+    style: {
+      background: "rgba(255,255,255,0.15)",
+      border: "none",
+      color: C.white,
+      cursor: "pointer",
+      width: 32,
+      height: 32,
+      borderRadius: "50%",
+      fontSize: 16
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#f0fff4",
+      border: "1px solid #38a16944",
+      borderRadius: 10,
+      padding: "14px 16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: C.green,
+      marginBottom: 6
+    }
+  }, "\u0645\u064A\u0632\u0629 \u0642\u0627\u062F\u0645\u0629 \u0642\u0631\u064A\u0628\u0627\u064B"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.t2,
+      lineHeight: 1.9
+    }
+  }, "\u0633\u064A\u062A\u0645\u0643\u0646 \u0645\u0634\u0631\u0641 \u0627\u0644\u0646\u0638\u0627\u0645 \u0645\u0646 \u0631\u0641\u0639 \u0645\u0644\u0641\u0627\u062A KML \u0644\u0623\u064A \u062E\u0637 \u0648\u062A\u0648\u0644\u064A\u062F \u0645\u0646\u0627\u0637\u0642 \u0627\u0644\u0645\u0633\u062D \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.bg,
+      borderRadius: 9,
+      padding: "11px 13px",
+      border: "1px solid " + C.bdrL,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.navy,
+      marginBottom: 8
+    }
+  }, "\u0627\u0644\u062E\u0637 \u0627\u0644\u062D\u0627\u0644\u064A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 10,
+      height: 10,
+      borderRadius: 2,
+      background: C.orange
+    }
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.navy
+    }
+  }, LINE.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.t3
+    }
+  }, LINE.km, " \u0643\u0645 \xB7 ", LINE.towers, " \u0628\u0631\u062C \xB7 ", ZONES.length, " \u0645\u0646\u0637\u0642\u0629")), /*#__PURE__*/React.createElement(Bdg, {
+    label: "\u0645\u064F\u0641\u0639\u064E\u0651\u0644",
+    color: C.green
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      setShowAddLine(false);
+    },
+    style: {
+      width: "100%",
+      padding: "10px",
+      borderRadius: 10,
+      border: "none",
+      background: "linear-gradient(135deg," + C.navy + "," + C.navy3 + ")",
+      color: C.white,
+      cursor: "pointer",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, "\u0645\u0648\u0627\u0641\u0642")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      top: 64,
+      left: 14,
+      zIndex: 9999,
+      display: "flex",
+      flexDirection: "column",
+      gap: 7,
+      pointerEvents: "none"
+    }
+  }, toasts.map(function (t) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: t.id,
+      style: {
+        background: C.white,
+        border: "1px solid " + (t.color || C.navy) + "44",
+        borderRight: "4px solid " + (t.color || C.navy),
+        borderRadius: 10,
+        padding: "10px 14px",
+        minWidth: 270,
+        display: "flex",
+        gap: 9,
+        alignItems: "flex-start",
+        boxShadow: "0 8px 24px rgba(26,46,94,0.18)",
+        animation: "slideIn .3s ease",
+        pointerEvents: "all"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18,
+        flexShrink: 0
+      }
+    }, t.icon), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.navy,
+        marginBottom: 2
+      }
+    }, t.title), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.t3
+      }
+    }, t.body)), /*#__PURE__*/React.createElement("button", {
+      onClick: function () {
+        setToasts(function (old) {
+          return old.filter(function (x) {
+            return x.id !== t.id;
+          });
+        });
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: C.t4,
+        cursor: "pointer",
+        fontSize: 14
+      }
+    }, "\u2715"));
+  })));
+}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
